@@ -3,6 +3,10 @@ uuid = "4f298ee8-ec75-4a18-86e7-feaa8fc81c16"
 authors = ["tlorans <thomaslorans@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+
 [compat]
 julia = "1"
 
