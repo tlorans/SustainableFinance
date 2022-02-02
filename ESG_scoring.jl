@@ -25,7 +25,7 @@ begin
 end
 
 # ╔═╡ 61e63742-fd93-4825-bd77-184e66b9fe27
-using CSV, DataFrames, D3Trees, Statistics, StatsBase
+using CSV, DataFrames, D3Trees, Statistics, StatsBase, Distributions
 
 # ╔═╡ 042774fe-33cc-4162-b50f-aaba28a13e53
 using Plots; default(fontfamily="Computer Modern", framestyle=:box) # LaTex-style
@@ -39,6 +39,9 @@ md"""
 - Scoring System
   - Scoring Trees
   - Normalizing Scores
+- Illustations
+  - Issuer's ESG Score Computation
+  - ESG Score Distribution and Portfolio Concentration
 """
 
 # ╔═╡ b83f41ea-665d-474f-a32f-0f93ff6af1f5
@@ -353,6 +356,221 @@ Of course, one can transform the z-score into q-score using the Normal distribut
 Once normalized, scores can be aggregated as a simple weighted sum, using the scoring tree.
 """
 
+# ╔═╡ ee0db9e1-529f-4f31-ba5a-3aebffda732f
+md"""
+## ESG Score and Portfolio
+
+### Issuers and Portfolio Score Computation
+
+We consider an investment universe of 8 issuers with the following ESG scores:
+"""
+
+# ╔═╡ 18a1e02b-2d45-4ad2-929f-f43d74a955c5
+issuers_scores = DataFrame(:ESG_pillar => ["E","S","G"], 
+							:A => [-2.80, -1.70, 0.30],
+							:B => [-1.80, -1.90, -0.70],
+							:C => [-1.75, 0.75, -2.75],
+							:D => [0.60, -1.60, 2.60],
+							:E => [0.75, 1.85, 0.45],
+							:F => [1.30, 1.05, 2.35],
+							:G => [1.90, 0.90, 2.20],
+							:H => [2.70, 0.70, 1.70])
+
+# ╔═╡ 3bc75374-b625-4fb4-a23e-cac6720cb911
+md"""
+Suppose we have the following simple scoring tree:
+"""
+
+# ╔═╡ e2a9255f-0d41-4341-88b2-bfdcf50daebc
+begin
+	children_two = [[2,3,4]]
+	text_two = ["s", "E \n 40%", "S  \n 40%", "G  \n 20%"]
+	link_style_two = ["","stroke:green","stroke:red", "stroke:blue"]
+	t_two = D3Tree(children_two,
+				text = text_two,
+				link_style = link_style_two,
+				init_expand = 10)
+end
+
+# ╔═╡ a9d4ff67-a00c-49e1-b16d-3a98389d031e
+md"""
+Then we would simply have:
+
+$s_i^{(ESG)} = 0.4 s_i^{(E)} + 0.4 s_i^{(S)} + 0.2 s_i^{(G)}$
+"""
+
+# ╔═╡ 704831fa-c82c-4f96-99d2-6d7163c2e4cc
+begin
+	issuers = names(issuers_scores)[2:end]
+	scores = [0.4 * issuers_scores[1,i] + 0.4*issuers_scores[2,i] + 0.2 * issuers_scores[3,i] for i in issuers]
+	results_issuers_scores = DataFrame(:issuer => issuers, :ESG_score => scores)
+end
+
+# ╔═╡ 899cf609-7fe6-430d-8558-3e4a83e0fc01
+equally_weighted_portfolio_score = mean(results_issuers_scores[:,:ESG_score]);
+
+# ╔═╡ 142c5ab1-464b-4582-a01b-9277f264badb
+md"""
+Now let's calculate the ESG score of the equally-weighted portfolio $x_{ew}$:
+
+$s^{(ESG)}(x_{ew}) = \sum^8_{i=1}x_{ew,i}s_i^{(ESG)}$
+
+Then $s^{(ESG)}(x_{ew})$
+= $equally_weighted_portfolio_score
+"""
+
+# ╔═╡ e1159637-b3bc-438d-8a22-538c5334947a
+md"""
+### ESG Score Distribution and Portfolio Concentration
+
+Now let's take a look at some relationship between ESG score distribution and / or Portfolio concentration.
+First, let's implement a simple algorithm to simulate portfolio $x$ distribution:
+
+- simulate $n$ independent uniform random numbers $(u_1,...,u_n)$
+- compute the random variates $(t_1,...,t_n)$ where:
+
+$t_i = u_i^{1/\alpha}$
+Where $\alpha$ is the parameter governing the concentration.
+- calculate the normalization constant:
+
+$c = (\sum^n_{i=1}t_i)^{-1}$
+- and deduce the portfolio weights $x=(x_1,...,x_n)$
+
+$x_i = ct_i$
+"""
+
+# ╔═╡ 88e81cef-a3ed-4eb3-b532-42334012248a
+function simulating_portfolio(α::Float64,n::Int)
+	# we simulate n independent uniform random numbers
+	uniform_u = rand(n)
+	# we compute the random variates
+	t_vector = uniform_u .^(1/α)
+	# we calculate the normalization constant
+	c = sum(t_vector)^(-1)
+	# we deduce the portfolio weights 
+	x = c .* t_vector
+end
+
+
+# ╔═╡ 30db975f-d595-4811-beed-8c7c28c82803
+@bind α Slider(0.5:0.5:70, default = 0.5, show_value = true)
+
+# ╔═╡ 88d8dad1-01e5-49e7-bb62-67358a10b44f
+begin
+	simulated_weights = simulating_portfolio(α, 50)
+	n = length(simulated_weights)
+	sort!(simulated_weights, rev = true)
+	plot((1:n)./n .* 100, simulated_weights .*100, seriestype = :bar, xlabel = "percentage of issuers", ylabel = "portfolio weights (in %)", label = "", ylims = (0,7))
+end
+
+# ╔═╡ 57c33025-2a90-463f-89b7-91f4b6929b6f
+md"""
+- We assume that the weight $x_i$ and the ESG score $s_i$ of the issuer $i$ are independent. 
+- We can generate the vector of ESG scores $s = (s_1, ..., s_n)$ with normally-distributed random variables.
+- We deduce that the simulated value of the portfolio ESG score $s(x)$ is equal to:
+
+$s(x) = \sum^n_{i=1}x_is_i$
+
+- We replicate the simulation of $s(x)$ 50 000 times and draw the corresponding diagram.
+"""
+
+# ╔═╡ 74f40223-5f64-41ef-868c-369227f0c54d
+function simulating_portfolio_esg_score_indep(α::Float64, n::Int)
+	vector_results = zeros(n)
+	for i in 1:n
+		x = simulating_portfolio(α, 50)
+		s = rand(Normal(0.0,1.0), 50)
+		s_x = sum(x .* s)
+		vector_results[i] = s_x
+	end
+	return vector_results
+end
+
+# ╔═╡ 5544adf7-98f7-4216-855a-c3b6ed36d541
+@bind α_2 Slider(0.5:0.5:70, default = 0.5, show_value = true)
+
+# ╔═╡ 017ba49c-ff42-4317-b219-332e239f4d6e
+histogram( simulating_portfolio_esg_score_indep(α_2, 50000), bins = 100, label = "", ylims = (0.0,3000), xlims = (-0.5,0.5))
+
+# ╔═╡ 316d1744-e5d7-4117-8646-a8f6a2914f6b
+md"""
+We observe that the portfolio ESG score $s(x)$ is equal to zero on average, and its variance is an increasing function of the portfolio concentration.
+"""
+
+# ╔═╡ 5de86ff6-440a-4db2-91cb-872bd4ea6ef0
+md"""
+We now assume that the weight $x_i$ and the ESG score $s_i$ of the issuer $i$ are positively correlated. 
+
+Here is the algorithm to simulate the ESG portfolio score $s(x)$ assuming positive correlation between $x_i$ and $s_i$, with a correlation parameter $\rho$:
+- simulate $n$ independent normally-distributed random numbers $g'_i$ and $g_i^{''}$ and compute the copula $(u_i, v_i)$:
+
+$u_i = \phi(g'_i)$
+$v_i = \phi(\rho g'_i + \sqrt{1-\rho^2g^{''}_i})$
+- compute the random variates $(t_1, ..., t_n)$ where $t_i = u^{1/\alpha}$
+- deduce the vector of weights $x = (x_1,...,x_n)$:
+
+$x_i = t_i/\sum^n_{j=1}t_j$
+- simulate the vector of scores $s=(s_1,...,s_n)$
+- calculate the portfolio score:
+$s(x) = \sum^n_{i=1}x_is_i$
+"""
+
+# ╔═╡ c9353c5d-5032-4220-a257-ed900f9323ff
+function simulating_portfolio_score_copula(n::Int, ρ::Float64, α::Float64)
+	vector_results = zeros(n)
+	for i in 1:n
+		# simulate n indep normally-distributed random numbers
+		g_i = rand(Normal(0.0,1.0), 50)	
+		g_i_2 = rand(Normal(0.0,1.0), 50)
+		# compute u and v
+		u_i = cdf.(Normal(0.0,1.0),g_i)
+		v_i = cdf.(Normal(0.0,1.0), ρ * g_i_2 .+ sqrt(1 - ρ^2) * g_i_2)
+		# we compute the random variate t 
+		t_i = u_i.^(1/α)
+		# we deduce the vector of weights
+		x_i = t_i / sum(t_i)
+		# we simulate the vector of scores s
+		s_i = ρ * g_i .+ sqrt(1 - ρ^2) * g_i_2
+		#s_i = quantile.(Normal(0.0, 1.0), v_i)
+		# we calculate the portfolio score
+		s = sum(x_i .* s_i)
+
+		vector_results[i] = s
+	end
+	return vector_results
+end
+
+# ╔═╡ 2c7993cc-196d-4320-a3c1-0e87ab5b8873
+@bind α_3 Slider(0.5:0.5:70, default = 0.5, show_value = true)
+
+# ╔═╡ 9e1a258c-e595-4eba-bf2a-44c62f3db909
+
+histogram(simulating_portfolio_score_copula(50000,0.5,α_3), bins = 100, label = "", ylims = (0.0,3000), xlims = (-0.5,1))
+
+# ╔═╡ 67099b48-39af-41d2-bbd3-96a87936a676
+md"""
+In the independent case, we found that $E[s(x)]=0$, while we notice that $E[s(x)]\neq 0$ when $\rho = 50\%$. We can graph the relationship between the correlation parameter $\rho$ and the expected ESG score $E[s(x)]$ of the portfolio $x$:
+"""
+
+# ╔═╡ b3aefed4-195e-4a52-bf82-5097a82ce816
+begin
+	data_alpha_05 = [mean(simulating_portfolio_score_copula(5000,i,0.5)) for i in 0:0.1:1]
+	data_alpha_15 = [mean(simulating_portfolio_score_copula(5000,i,1.5)) for i in 0:0.1:1]
+	data_alpha_25 = [mean(simulating_portfolio_score_copula(5000,i,2.5)) for i in 0:0.1:1]
+	data_alpha_70 = [mean(simulating_portfolio_score_copula(5000,i,70.0)) for i in 0:0.1:1]
+	plot([i for i in 0:0.1:1], data_alpha_05, xlabel = "correlation parameter", ylabel = "Expected ESG score of the portfolio", label = 0.5)
+	plot!([i for i in 0:0.1:1], data_alpha_15, xlabel = "correlation parameter",  label = 1.5)
+	plot!([i for i in 0:0.1:1], data_alpha_25, xlabel = "correlation parameter",  label = 2.5)
+	plot!([i for i in 0:0.1:1], data_alpha_70, xlabel = "correlation parameter",  label = 70)
+end
+
+# ╔═╡ 0264fe0a-eefa-4739-86a5-4a25c9c104c8
+md"""
+- Big cap companies have more resources to develop an ESG policy than small cap companies.
+- Therefore, we observe a positive correlation between the market capitalization and the ESG score of an issuer.
+- If follows that ESG portfolios have generally a size bias. For instance, we generally observe that cap-weighted indexes have an ESG score which is greater than the average of ESG socres.
+"""
+
 # ╔═╡ bcd04c15-49dc-469f-890c-18169a6d9827
 TableOfContents(title="ESG Scoring", depth=4)
 
@@ -362,6 +580,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 D3Trees = "e3df1716-f71e-5df9-9e2d-98e193103c45"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -371,6 +590,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 CSV = "~0.10.2"
 D3Trees = "~0.3.1"
 DataFrames = "~1.3.2"
+Distributions = "~0.25.45"
 Plots = "~1.25.7"
 PlutoUI = "~0.7.32"
 StatsBase = "~0.33.14"
@@ -517,9 +737,21 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
+[[DensityInterface]]
+deps = ["InverseFunctions", "Test"]
+git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
+uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
+version = "0.4.0"
+
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[Distributions]]
+deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
+git-tree-sha1 = "24d26ca2197c158304ab2329af074fbe14c988e4"
+uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
+version = "0.25.45"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -560,6 +792,12 @@ deps = ["Compat", "Dates", "Mmap", "Printf", "Test", "UUIDs"]
 git-tree-sha1 = "04d13bfa8ef11720c24e4d840c0033d145537df7"
 uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
 version = "0.9.17"
+
+[[FillArrays]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
+git-tree-sha1 = "8756f9935b7ccc9064c6eef0bff0ad643df733a3"
+uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
+version = "0.12.7"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -885,11 +1123,21 @@ git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+1"
 
+[[OpenLibm_jll]]
+deps = ["Artifacts", "Libdl"]
+uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "648107615c15d4e09f7eca16307bc821c1f718d8"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "1.1.13+0"
+
+[[OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.5+0"
 
 [[Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -907,6 +1155,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "b2a7af664e098055a7529ad1a900ded962bca488"
 uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
 version = "8.44.0+0"
+
+[[PDMats]]
+deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "ee26b350276c51697c9c2d88a072b339f9f03d73"
+uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
+version = "0.11.5"
 
 [[Parsers]]
 deps = ["Dates"]
@@ -976,6 +1230,12 @@ git-tree-sha1 = "ad368663a5e20dbb8d6dc2fddeefe4dae0781ae8"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
 version = "5.15.3+0"
 
+[[QuadGK]]
+deps = ["DataStructures", "LinearAlgebra"]
+git-tree-sha1 = "78aadffb3efd2155af139781b8a8df1ef279ea39"
+uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+version = "2.4.2"
+
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -1011,6 +1271,18 @@ deps = ["UUIDs"]
 git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
+
+[[Rmath]]
+deps = ["Random", "Rmath_jll"]
+git-tree-sha1 = "bf3188feca147ce108c76ad82c2792c57abe7b1f"
+uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
+version = "0.7.0"
+
+[[Rmath_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
+uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
+version = "0.3.0+0"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -1053,6 +1325,12 @@ version = "1.0.1"
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
+[[SpecialFunctions]]
+deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
+git-tree-sha1 = "e6bf188613555c78062842777b116905a9f9dd49"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "2.1.0"
+
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
 git-tree-sha1 = "2884859916598f974858ff01df7dfc6c708dd895"
@@ -1074,11 +1352,21 @@ git-tree-sha1 = "51383f2d367eb3b444c961d485c565e4c0cf4ba0"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.14"
 
+[[StatsFuns]]
+deps = ["ChainRulesCore", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
+git-tree-sha1 = "f35e1879a71cca95f4826a14cdbf0b9e253ed918"
+uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+version = "0.9.15"
+
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
 git-tree-sha1 = "d21f2c564b21a202f4677c0fba5b5ee431058544"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 version = "0.6.4"
+
+[[SuiteSparse]]
+deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
+uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[TOML]]
 deps = ["Dates"]
@@ -1354,7 +1642,7 @@ version = "0.9.1+5"
 # ╟─0588e72e-83ef-11ec-106a-517c7ec687cc
 # ╟─882ebf57-19b6-475b-aa19-e9b2e168acbf
 # ╟─b83f41ea-665d-474f-a32f-0f93ff6af1f5
-# ╟─61e63742-fd93-4825-bd77-184e66b9fe27
+# ╠═61e63742-fd93-4825-bd77-184e66b9fe27
 # ╟─042774fe-33cc-4162-b50f-aaba28a13e53
 # ╟─44cfca3d-5dd7-491a-b1a0-4b72d64c445f
 # ╟─9b1aede8-655d-4544-9aac-8407d7a19127
@@ -1379,6 +1667,30 @@ version = "0.9.1+5"
 # ╟─55ff9a90-0061-4b9a-a759-bb41ff492d41
 # ╟─fae09e9d-b1c7-446c-a035-6ea7fd386515
 # ╟─16705f37-c426-4356-9d99-8c554020974c
-# ╟─bcd04c15-49dc-469f-890c-18169a6d9827
+# ╟─ee0db9e1-529f-4f31-ba5a-3aebffda732f
+# ╟─18a1e02b-2d45-4ad2-929f-f43d74a955c5
+# ╟─3bc75374-b625-4fb4-a23e-cac6720cb911
+# ╟─e2a9255f-0d41-4341-88b2-bfdcf50daebc
+# ╟─a9d4ff67-a00c-49e1-b16d-3a98389d031e
+# ╟─704831fa-c82c-4f96-99d2-6d7163c2e4cc
+# ╟─142c5ab1-464b-4582-a01b-9277f264badb
+# ╟─899cf609-7fe6-430d-8558-3e4a83e0fc01
+# ╟─e1159637-b3bc-438d-8a22-538c5334947a
+# ╟─88e81cef-a3ed-4eb3-b532-42334012248a
+# ╟─30db975f-d595-4811-beed-8c7c28c82803
+# ╟─88d8dad1-01e5-49e7-bb62-67358a10b44f
+# ╟─57c33025-2a90-463f-89b7-91f4b6929b6f
+# ╟─74f40223-5f64-41ef-868c-369227f0c54d
+# ╟─5544adf7-98f7-4216-855a-c3b6ed36d541
+# ╟─017ba49c-ff42-4317-b219-332e239f4d6e
+# ╟─316d1744-e5d7-4117-8646-a8f6a2914f6b
+# ╟─5de86ff6-440a-4db2-91cb-872bd4ea6ef0
+# ╟─c9353c5d-5032-4220-a257-ed900f9323ff
+# ╟─2c7993cc-196d-4320-a3c1-0e87ab5b8873
+# ╟─9e1a258c-e595-4eba-bf2a-44c62f3db909
+# ╟─67099b48-39af-41d2-bbd3-96a87936a676
+# ╟─b3aefed4-195e-4a52-bf82-5097a82ce816
+# ╟─0264fe0a-eefa-4739-86a5-4a25c9c104c8
+# ╠═bcd04c15-49dc-469f-890c-18169a6d9827
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
