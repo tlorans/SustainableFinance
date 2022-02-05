@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.2
+# v0.17.7
 
 using Markdown
 using InteractiveUtils
@@ -27,6 +27,14 @@ md"""
 # ╔═╡ b061a081-5bbb-409c-a1aa-931063ef085e
 md"""
 ## Tilted Portfolios with ESG and Carbon Intensity Constraints
+
+
+"""
+
+# ╔═╡ 64692caa-30ec-4d8f-bfeb-a341aff44f3e
+md"""
+
+### CAPM Model and Covariance Matrix
 
 Let's consider the CAPM model:
 
@@ -68,18 +76,16 @@ $\Sigma = cov(R)$
 $=\beta \beta^T \sigma^2_m + diag(\tilde{\sigma}^2_1,...,\tilde{\sigma}^2_5)$
 """
 
-# ╔═╡ 4d32d320-08c7-4d3a-b953-86581719108c
-vec(five_assets["Beta",:]) * vec(five_assets["Beta",:])'
-
 # ╔═╡ 1b15d18c-f629-4159-a4fb-a60c21289694
-Σ_tilt_example = vec(five_assets["Beta",:]) * vec(five_assets["Beta",:])' * (0.2^2) + diagm(vec(five_assets["sigma",:])) 
-
-# ╔═╡ 8172a948-721e-4eff-a4cc-3fffb5d4fe17
-Σ_tilt_example_2 = Σ_tilt_example .* 10000
+begin
+	Σ_tilt_example = vec(five_assets["Beta",:]) * vec(five_assets["Beta",:])' * (0.2^2) + diagm(vec(five_assets["sigma",:]))
+end
 
 # ╔═╡ 7bac9ff2-c22a-4c5a-b797-cf9f8c975695
 md"""
-We can deduce the volatility $\sigma_i$
+We can deduce the volatility $\sigma_i$:
+
+$\sigma_i = \sqrt{\beta_i^2 \sigma^2_m + \tilde{\sigma_i^2}}$
 """
 
 # ╔═╡ 6c477ca6-326b-4e77-8ddb-8cd91b5acd80
@@ -92,6 +98,98 @@ and the correlation matrix:
 
 # ╔═╡ fc50663d-b4c1-401f-a8b8-9fa93e0421b3
 correl_tilted = cov2cor(Σ_tilt_example, sigma_tilted_example)
+
+# ╔═╡ efb67489-06ad-4f53-bc1a-ce3991afb48f
+md"""
+### Portfolio's Extrafinancial and Financial Excess Performance
+"""
+
+# ╔═╡ d014fe03-3bb9-4d3e-9033-1c3b04087a0d
+md"""
+### Modified QP Problem for Tilted Portfolios
+
+Recall that the formulation of a standard QP problem is:
+
+$\begin{equation*}
+\begin{aligned}
+& x^* = 
+& & {\text{arg min}}  \frac{1}{2}x^TQx-x^TR\\
+& \text{subject to}
+& & Ax = B \\
+&&& Cx \leq D \\
+&&& x^- \leq x \leq x^+
+\end{aligned}
+\end{equation*}$
+
+Let's assume an example where we would like to tilt the benchmark $b$ in order to improve its expected return. We have a modified $\gamma$ problem where $\gamma$ is the risk aversion parameter.
+What we want in this exercise is:
+- enhance the excess expected return compared to the benchmark: 
+
+$\mu(x|b)$
+
+- and minimize the tracking error volatility relative to the benchmark:
+
+$\sigma^2(x |b)$
+"""
+
+# ╔═╡ a7343a93-2f6f-4455-b2e1-1a8a3b19b733
+md"""
+
+#### Modified Objective Function
+
+The initial objective function:
+
+$x^* = \text{arg min} \frac{1}{2}x^TQx-x^TR$
+
+becomes: 
+
+$x^* =  \text{arg min} \frac{1}{2} \sigma^2(x |b) - \mu(x|b)$
+
+Since we want to formulate the $\gamma$-problem of portfolio optimization, it becomes:
+
+$x^*(\gamma) = \text{arg min} \frac{1}{2} \sigma^2(x |b) - \gamma\mu(x|b)$
+
+Finally, since $\sigma^2(x|b)=(x-b)^T \Sigma (x-b)$ and $\mu(x|b) = (x-b)^T \mu$, we have the QP objective function:
+
+$x^*(\gamma) = \text{arg min} \frac{1}{2} x^T \Sigma x - x^T (\gamma \mu + \Sigma b)$
+"""
+
+# ╔═╡ d970feaf-9fb0-4c51-8738-0164e4fb68da
+md"""
+#### Modified Constraints
+
+Let's now reformulate the initial constraints. 
+We first had in the initial QP problem:
+
+$Ax = B$
+
+which will become:
+
+$1^T_nx = 1$
+(i.e. the sum of the weights $x_i$ must sum to one)
+
+We then had:
+
+$x^- \leq x \leq x^+$
+
+Which becomes:
+
+$0_n \leq x \leq 1_n$
+(i.e. the weights $x_i$ must be between 0 and 1)
+
+"""
+
+# ╔═╡ f26affef-fcac-4356-9826-a30d0c86339e
+md"""
+#### Drawing Financial and Extrafinancial Efficient Frontiers
+
+We compute $x^*(\gamma)$ for several values for $\gamma \in [0,10]$ to draw the efficient frontier.
+
+To assess the performance of the portfolio against the benchmark, we will specifically:
+
+- Draw the relationship between the tracking error volatility $\sigma(x^*(\gamma)|b)$ and the excess expected return $\mu (x^*(\gamma)|b)$
+- Draw the relationship between $\sigma(x^*(\gamma)|b)$ and $S^{ESG}(x^*(\gamma))$
+"""
 
 # ╔═╡ 80f3dd59-3d0f-4ce4-8127-251e062ac424
 md"""
@@ -215,7 +313,7 @@ begin
 	# generate the data
 	n = length(issuers) # number of assets
 	# the risk-aversion parameter
-	γ = 0.07276
+	γ = 0.07355
 	# μ (the expected returns) is replaced by the ESG excess score
 	# the risk factor is replaced by the tracking error volatility
 	model = JuMP.Model(COSMO.Optimizer)
@@ -224,6 +322,7 @@ begin
 	@objective(model, Min, 1/2 * x' * new_sigma * x - x' * (γ * esg_score + new_sigma * cw_weights))
 	@constraint(model, zeros(n) .<= x .<= ones(n))
 	@constraint(model, ones(n)' * x == 1)
+	@constraint(model, x .<= 0.3)
 	#latex_formulation(model)
 	JuMP.optimize!(model)
 	x_opt = JuMP.value.(x)
@@ -897,19 +996,23 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═d535c33a-84b1-11ec-1209-9558b54ae47c
 # ╠═35eab9cc-0609-4da9-aa93-1a494e5a61dd
 # ╠═451662d6-6b87-414f-9cea-7aa5fae9208d
-# ╟─b061a081-5bbb-409c-a1aa-931063ef085e
-# ╠═122f7117-1913-4778-b74d-9d0768250c9c
+# ╠═b061a081-5bbb-409c-a1aa-931063ef085e
+# ╟─64692caa-30ec-4d8f-bfeb-a341aff44f3e
+# ╟─122f7117-1913-4778-b74d-9d0768250c9c
 # ╟─9c222eea-2fbf-471f-9baa-c0a83fcd7a6d
 # ╟─ffb6c335-d9ce-4e66-ba1f-2dbd3689ba5c
 # ╟─80c8b7cb-96b5-41de-8fb3-050a2a6c159b
-# ╠═b4f6bf13-d22c-4534-a8c2-6867e44ac2b5
-# ╠═4d32d320-08c7-4d3a-b953-86581719108c
-# ╠═1b15d18c-f629-4159-a4fb-a60c21289694
-# ╠═8172a948-721e-4eff-a4cc-3fffb5d4fe17
-# ╠═7bac9ff2-c22a-4c5a-b797-cf9f8c975695
-# ╠═6c477ca6-326b-4e77-8ddb-8cd91b5acd80
-# ╠═84788dee-5a25-43e1-a070-1195dfb0c43d
-# ╠═fc50663d-b4c1-401f-a8b8-9fa93e0421b3
+# ╟─b4f6bf13-d22c-4534-a8c2-6867e44ac2b5
+# ╟─1b15d18c-f629-4159-a4fb-a60c21289694
+# ╟─7bac9ff2-c22a-4c5a-b797-cf9f8c975695
+# ╟─6c477ca6-326b-4e77-8ddb-8cd91b5acd80
+# ╟─84788dee-5a25-43e1-a070-1195dfb0c43d
+# ╟─fc50663d-b4c1-401f-a8b8-9fa93e0421b3
+# ╠═efb67489-06ad-4f53-bc1a-ce3991afb48f
+# ╟─d014fe03-3bb9-4d3e-9033-1c3b04087a0d
+# ╟─a7343a93-2f6f-4455-b2e1-1a8a3b19b733
+# ╟─d970feaf-9fb0-4c51-8738-0164e4fb68da
+# ╟─f26affef-fcac-4356-9826-a30d0c86339e
 # ╠═80f3dd59-3d0f-4ce4-8127-251e062ac424
 # ╟─7a49eae9-80eb-4bf3-a3f9-875a3c6996ce
 # ╠═5e72150a-3c78-4c6f-b09d-d8ad2cf14340
