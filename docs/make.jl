@@ -1,8 +1,9 @@
 using Documenter
 using SustainableFinance
 
+push!(LOAD_PATH,"../src/")
 makedocs(
-    sitename = "SustainableFinance",
+    sitename = "Sustainable Finance",
     format = Documenter.HTML(),
     modules = [SustainableFinance];
     pages = [
