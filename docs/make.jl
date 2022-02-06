@@ -3,15 +3,15 @@ using SustainableFinance
 
 push!(LOAD_PATH,"../src/")
 makedocs(
-    sitename = "Sustainable Finance",
+    sitename = "Julia for Sustainable Finance",
     format = Documenter.HTML(),
     modules = [SustainableFinance];
     pages = [
         "Home" => "index.md",
-        "Introduction" => Any[
-            "Definition" => "Introduction/definition.md",
-            "Actors of Sustainable Finance"=>"Introduction/actors.md",
-            "The Market of ESG Investing"=>"Introduction/markets.md"
+        "ESG Scoring" => Any[
+            "Scoring System" => "ESG_Scoring/scoring_system.md",
+            "ESG Scores and Portfolio" =>"ESG_Scoring/esg_scores_portfolio.md"
+
         ]
     ]
 )

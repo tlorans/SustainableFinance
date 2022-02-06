@@ -1,7 +1,4 @@
-# Sustainable Finance
+# Julia for Sustainable Finance
 
-A course by Thierry Roncalli.
-
-The objective of this course is to understand the concepts of
-sustainable finance from the viewpoint of asset owners and managers.
+The objective of this website is to explain how to program various models in Julia. Examples and structure are based on a course by Thierry Roncalli.
 
