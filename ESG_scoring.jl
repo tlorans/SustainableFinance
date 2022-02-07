@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.18.0
+# v0.17.7
 
 using Markdown
 using InteractiveUtils
@@ -348,6 +348,18 @@ begin
 		z_score_normalization_plot(variable_raw_data_for_scoring)
 	end
 end
+
+# ╔═╡ 409625e2-8a43-4ab6-901e-17cb284afe86
+md"""
+Let $x_1, .., x_n$ be the sample. We have:
+
+$q_i = \hat{F}(x_i) = Pr(X \leq x_i) = \frac{\#(x_j \leq x_i)}{n_q}$
+
+We can use two normalization factors:
+
+- $n_q = n$
+- $n_q = n + 1$
+"""
 
 # ╔═╡ 16705f37-c426-4356-9d99-8c554020974c
 md"""
@@ -1665,7 +1677,8 @@ version = "0.9.1+5"
 # ╠═456f88f6-c7ce-4aa9-8b88-d0b00108a302
 # ╠═ad2c47e1-b0d2-4eb9-a453-a3240f30f167
 # ╠═55ff9a90-0061-4b9a-a759-bb41ff492d41
-# ╟─fae09e9d-b1c7-446c-a035-6ea7fd386515
+# ╠═fae09e9d-b1c7-446c-a035-6ea7fd386515
+# ╠═409625e2-8a43-4ab6-901e-17cb284afe86
 # ╟─16705f37-c426-4356-9d99-8c554020974c
 # ╟─ee0db9e1-529f-4f31-ba5a-3aebffda732f
 # ╟─18a1e02b-2d45-4ad2-929f-f43d74a955c5
@@ -1676,10 +1689,10 @@ version = "0.9.1+5"
 # ╟─142c5ab1-464b-4582-a01b-9277f264badb
 # ╟─899cf609-7fe6-430d-8558-3e4a83e0fc01
 # ╟─e1159637-b3bc-438d-8a22-538c5334947a
-# ╟─88e81cef-a3ed-4eb3-b532-42334012248a
-# ╟─30db975f-d595-4811-beed-8c7c28c82803
-# ╟─88d8dad1-01e5-49e7-bb62-67358a10b44f
-# ╟─57c33025-2a90-463f-89b7-91f4b6929b6f
+# ╠═88e81cef-a3ed-4eb3-b532-42334012248a
+# ╠═30db975f-d595-4811-beed-8c7c28c82803
+# ╠═88d8dad1-01e5-49e7-bb62-67358a10b44f
+# ╠═57c33025-2a90-463f-89b7-91f4b6929b6f
 # ╟─74f40223-5f64-41ef-868c-369227f0c54d
 # ╟─5544adf7-98f7-4216-855a-c3b6ed36d541
 # ╟─017ba49c-ff42-4317-b219-332e239f4d6e
