@@ -22,7 +22,41 @@ X₁ = Variable(X = [94.0, 38.6, 30.6, 74.4, 97.1, 57.1, 132.4, 92.5, 64.9], nam
 X₂ = Variable(X = [-0.03, -0.0550, 0.056, -0.013, -0.168, -0.035, 0.0850, -0.0910, -0.0460], name = "X₂")
 ```
 
-However, how can we aggregate $X_1$ and $X_2$ to create a synthetic score? We need to normalize the features $X_1, ..., X_n$!
+Let's also extend the functionality of `PrettyTables.jl` to support our new `Variable` struct:
+```julia
+using PrettyTables
+
+
+function PrettyTables.pretty_table(X::Vector{Variable})
+    x = reduce(hcat,[X[i].X for i in eachindex(X)])
+    X_names = reduce(vcat,[X[i].name for i in eachindex(X)])
+    return pretty_table(x, header = X_names)
+end
+
+pretty_table([X₁, X₂])
+```
+
+This prints a nice table in the `REPL`:
+```
+┌───────┬────────┐
+│    X₁ │     X₂ │
+├───────┼────────┤
+│  30.6 │ -0.168 │
+│  38.6 │ -0.091 │
+│  57.1 │ -0.055 │
+│  64.9 │ -0.046 │
+│  74.4 │ -0.035 │
+│  92.5 │  -0.03 │
+│  94.0 │ -0.013 │
+│  97.1 │  0.056 │
+│ 132.4 │  0.085 │
+└───────┴────────┘
+```
+
+
+Now, the question is: how can we aggregate $X_1$ and $X_2$ to create a synthetic score? 
+
+We need to normalize the features $X_1, ..., X_n$!
 
 
 ## Normalizing Scores
@@ -42,6 +76,27 @@ Where $\hat F$ is the empirical probability distribution.
 
 $z_i = \frac{x_i - \hat\mu(X)}{\hat\sigma(X)}$
 
+
+To do so, let's implement a `Score` struct and a `ScoringSystem` struct. 
+
+```julia
+Base.@kwdef mutable struct Score
+    S::Vector{Float64}} # resulting score
+    name::String
+end
+
+
+Base.@kwdef mutable struct ScoringSystem
+    X::Vector{Variable}
+    S::Union{Nothing, Vector{Score}} = nothing # the vector of scores
+    ω::Union{Nothing, Vector{Float64}} = nothing # the vector of weights
+end
+
+our_scoring = ScoringSystem(X = [X₁,X₂])
+```
+
+The purpose of the struct `Score` is to facilitate the interface between our `Variable`, our future functions for normalization, and the result (the `Score`). The purpose of the `ScoringSystem` struct is to regroup / organize our little scoring system.
+
 ### q-score
 
 Let $x_1, .., x_n$ be the sample. We have:
@@ -55,59 +110,138 @@ We can use two normalization factors:
 
 Let's implement this in Julia:
 ```julia
-function q_score!(X::Variable; scale = 100)::Variable 
+using Plots # to print the ecdf
+
+function q_score(X::Variable; scale = 100, get_plot = true)::Score 
     # the number of observations
     n = length(X.X)
     # we normalize the number of observations less or equal to each observation by n + 1 (the second normalization factor)
     q = [length(filter(x -> x <= i, X.X))/(n+1) for i in X.X] .* scale
-    X.X = q
-    return X
+    s = Score(S = q, name = string("q-score ",X.name))
+    # we print the ecdf of the variable to get a sense of q-score normalization
+    if get_plot
+        display(plot(sort(X.X), (1:n)./n * 100, 
+            xlabel = X.name, ylabel = s.name,
+            title = "q-score normalization", label = ""))
+    end
+    return s
 end
 
-q_score!(X₁)
-q_score!(X₂)
+# just the vector version of the function
+function q_score(X::Vector{Variable}; scale = 100, get_plot = true)::Vector{Score}
+    s = []
+    for i in eachindex(X)
+        push!(s, q_score(X[i]; scale, get_plot))
+    end 
+    return s 
+end
+
+# and finally the version applied to our scoring system
+function q_score!(s::ScoringSystem; scale = 100, get_plot = true)::ScoringSystem
+    s.S = q_score(s.X; scale, get_plot)
+    return s
+end
+
+q_score!(our_scoring)
 ```
 
-The outputs will be:
+The resulting scoring functions looks like the graphs below:
+!["ecdf"](x_1_q_score.png)
+!["ecdf"](x_2_q_score.png)
+
+Now let's again extend the `PrettyTables.jl` functionality to be applied on our `ScoringSystem`:
+```julia
+
+function PrettyTables.pretty_table(s::ScoringSystem)
+    X = reduce(hcat,[s.X[i].X for i in eachindex(s.X)])
+    S = reduce(hcat,[s.S[i].S for i in eachindex(s.S)])
+    X_names = reduce(vcat,[s.X[i].name for i in eachindex(s.X)])
+    S_names = reduce(vcat,[s.S[i].name for i in eachindex(s.S)])
+    return pretty_table(hcat(X,S), header = vcat(X_names, S_names))
+end
+
+pretty_table(our_scoring)
 ```
-Variable([70.0, 20.0, 10.0, 50.0, 80.0, 30.0, 90.0, 60.0, 40.0], "X₁")
-Variable([60.0, 30.0, 80.0, 70.0, 10.0, 50.0, 90.0, 20.0, 40.0], "X₂")
+
+We get the following table:
 ```
+┌───────┬────────┬────────────┬────────────┐
+│    X₁ │     X₂ │ q-score X₁ │ q-score X₂ │
+├───────┼────────┼────────────┼────────────┤
+│  94.0 │  -0.03 │       70.0 │       60.0 │
+│  38.6 │ -0.055 │       20.0 │       30.0 │
+│  30.6 │  0.056 │       10.0 │       80.0 │
+│  74.4 │ -0.013 │       50.0 │       70.0 │
+│  97.1 │ -0.168 │       80.0 │       10.0 │
+│  57.1 │ -0.035 │       30.0 │       50.0 │
+│ 132.4 │  0.085 │       90.0 │       90.0 │
+│  92.5 │ -0.091 │       60.0 │       20.0 │
+│  64.9 │ -0.046 │       40.0 │       40.0 │
+└───────┴────────┴────────────┴────────────┘
+```
+
 ### z-score
 
 Another normalization method can be the $z$-score:
 ```julia
 using Statistics # to load the mean and std functions
 
-function z_score!(X::Variable)::Variable
+# z-score normalization for a unique variable
+function z_score(X::Variable; get_plot = true)::Score 
     μ = mean(X.X)
     σ = std(X.X)
     z = [(i - μ) / σ for i in X.X]
-    X.X = z
-    return X
+    s = Score(S = z, name = string("z-score ",X.name))
+    if get_plot
+        display(plot(sort(X.X), sort(s.S), 
+            xlabel = X.name, ylabel = s.name,
+            title = "z-score normalization", label = ""))
+    end
+    return s
 end
 
-X₁ = Variable(X = [94.0, 38.6, 30.6, 74.4, 97.1, 57.1, 132.4, 92.5, 64.9], name = "X₁") 
-X₂ = Variable(X = [-0.03, -0.0550, 0.056, -0.013, -0.168, -0.035, 0.0850, -0.0910, -0.0460], name = "X₂")
+# vector version
+function z_score(X::Vector{Variable}; get_plot = true)::Vector{Score}
+    s = []
+    for i in eachindex(X)
+        push!(s, z_score(X[i]; get_plot))
+    end 
+    return s 
+end
 
-z_score!(X₁)
-z_score!(X₂)
+# version to be applied to our scoring system
+function z_score!(s::ScoringSystem; get_plot = true)::ScoringSystem
+    s.S = z_score(s.X; get_plot)
+    return s
+end
+
+z_score!(our_scoring)
 ```
 
-The outputs will be:
+!["z-score"](x_1_z_score.png)
+!["z-score"](x_2_z_score.png)
+
 ```
-Variable([0.5717875741990099, -1.1623564920760896, -1.4127744077836852, -0.04173631928459912, 0.6688245165357031, -0.5832650620022748, 1.7737935695954692, 0.5248342150038358, -0.3391075941873689], "X₁")
-Variable([0.04022409138923949, -0.294976670187756, 1.1933147112141038, 0.2681606092615964, -1.8100841125157756, -0.02681606092615966, 1.5821475946434187, -0.7776657668586294, -0.1743043960200376], "X₂")
+┌───────┬────────┬────────────┬────────────┐
+│    X₁ │     X₂ │ z-score X₁ │ z-score X₂ │
+├───────┼────────┼────────────┼────────────┤
+│  94.0 │  -0.03 │   0.571788 │  0.0402241 │
+│  38.6 │ -0.055 │   -1.16236 │  -0.294977 │
+│  30.6 │  0.056 │   -1.41277 │    1.19331 │
+│  74.4 │ -0.013 │ -0.0417363 │   0.268161 │
+│  97.1 │ -0.168 │   0.668825 │   -1.81008 │
+│  57.1 │ -0.035 │  -0.583265 │ -0.0268161 │
+│ 132.4 │  0.085 │    1.77379 │    1.58215 │
+│  92.5 │ -0.091 │   0.524834 │  -0.777666 │
+│  64.9 │ -0.046 │  -0.339108 │  -0.174304 │
+└───────┴────────┴────────────┴────────────┘
 ```
 
-### From z-score to q-score
+### Score Aggregation 
+
+Now that we have normalized our scores, let's compute the final scores, based on a weighting set such as $\omega_1 = 0.3$ and $\omega_2 = 0.7$:
 
 
 
-## Scoring Trees 
 
-Let's illustrate this with a two-level tree structure.
-Let's assume that at level 2:
-
-$\omega_1^{(2)} = \omega_2^{(2)} = \omega_3^{(2)} = 33.33\%$
 
