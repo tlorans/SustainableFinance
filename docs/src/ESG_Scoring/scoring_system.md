@@ -86,10 +86,16 @@ Base.@kwdef mutable struct Score
 end
 
 
+using Graphs # import for the directed graph
+using GraphPlot # import for the directed graph
+import Cairo, Fontconfig # import for the directed graph
+
 Base.@kwdef mutable struct ScoringSystem
     X::Vector{Variable}
-    S::Union{Nothing, Vector{Score}} = nothing # the vector of scores
+    S::Union{Nothing, Vector{Score}} = nothing # the vector of subscores
     ω::Union{Nothing, Vector{Float64}} = nothing # the vector of weights
+    graph::Union{Nothing,SimpleDiGraph} = nothing # directed graph representing the scoring tree 
+    score::Union{Nothing,Score} = nothing # the vector of aggregated score
 end
 
 our_scoring = ScoringSystem(X = [X₁,X₂])
@@ -237,11 +243,58 @@ z_score!(our_scoring)
 └───────┴────────┴────────────┴────────────┘
 ```
 
-### Score Aggregation 
+## Scoring Tree
 
-Now that we have normalized our scores, let's compute the final scores, based on a weighting set such as $\omega_1 = 0.3$ and $\omega_2 = 0.7$:
+As mentioned previously, most ESG scoring systems are based on scoring trees. Our example is a simple two-level tree structure.
+Let's represent it with a directed graph:
+```julia
+function get_scoring_tree!(s::ScoringSystem)::ScoringSystem
+    n = length(s.S) # number of subscores
+    G = Graphs.SimpleDiGraph(n+1) # we add + 1 to n because we need to take into account the score (aggregated)
+    for i in 2:n+1 
+        add_edge!(G,i, 1)
+    end 
+    # plot the graph 
+    nodelabel = vcat(["s"],[s.S[i].name for i in eachindex(s.S)])
+    display(gplot(G, nodelabel = nodelabel))
+    s.graph = G
+    return s
+end
 
+get_scoring_tree!(our_scoring)
+```
 
+!["scoring_tree"](scoring_tree.png)
 
+Finally, let's compute the aggregated score with $\omega_1 = 0.3$ and $\omega_2 = 0.7$:
+```julia
 
+function get_aggregate_score!(s::ScoringSystem)::ScoringSystem
+# just the weighted sum
+    s.score = Score(S = sum([s.S[i].S * s.ω[i] for i in eachindex(s.ω)]),
+                    name = "Aggregate score")
 
+    # will print the result in table format
+    pretty_table(s.score.S, header = [s.score.name])
+    return s
+end
+
+our_scoring.ω = [0.3, 0.7] # our weights vector
+
+get_aggregate_score!(our_scoring)
+```
+```
+┌─────────────────┐
+│ Aggregate score │
+├─────────────────┤
+│        0.199693 │
+│       -0.555191 │
+│        0.411488 │
+│        0.175192 │
+│        -1.06641 │
+│       -0.193751 │
+│         1.63964 │
+│       -0.386916 │
+│       -0.223745 │
+└─────────────────┘
+```
