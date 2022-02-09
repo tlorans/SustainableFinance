@@ -1,4 +1,4 @@
-# ESG Scoring
+# Scoring System
 
 - Most of ESG scoring systems are based on scoring trees. 
 - Raw data are normalised in order to obtain features $X_1,...,X_m$

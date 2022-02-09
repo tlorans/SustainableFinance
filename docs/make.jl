@@ -9,9 +9,11 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "ESG Scoring" => Any[
-            "Scoring System" => "ESG_Scoring/scoring_system.md",
-            "ESG Scores and Portfolio" =>"ESG_Scoring/esg_scores_portfolio.md"
-
+            "Scoring System" => "ESG_Scoring/scoring_system.md"
+        ],
+        "ESG Tilting" => Any[
+            "QP Problem for Tilting" => "ESG_Tilting/qp_problem_for_tilting.md",
+            "QP Problem for Enhanced ESG Score" => "ESG_Tilting/qp_problem_for_enhanced_esg.md"
         ]
     ]
 )
