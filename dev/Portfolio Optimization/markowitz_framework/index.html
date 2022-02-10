@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>The Markowitz framework · Julia for Sustainable Finance</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><script src="../../../copy.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Julia for Sustainable Finance</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Portfolio Optimization</span><ul><li class="is-active"><a class="tocitem" href>The Markowitz framework</a><ul class="internal"><li><a class="tocitem" href="#Notations"><span>Notations</span></a></li><li><a class="tocitem" href="#Computation-of-the-first-two-moments"><span>Computation of the first two moments</span></a></li><li><a class="tocitem" href="#Efficient-frontier"><span>Efficient frontier</span></a></li><li><a class="tocitem" href="#Markowitz-trick"><span>Markowitz trick</span></a></li></ul></li><li><a class="tocitem" href="../capm/">Capital asset pricing model (CAPM)</a></li><li><a class="tocitem" href="../optimization_benchmark/">Portfolio optimization in the presence of a benchmark</a></li><li><a class="tocitem" href="../black_litterman/">Black-Litterman model</a></li><li><a class="tocitem" href="../covariance_matrix/">Covariance matrix</a></li><li><a class="tocitem" href="../expected_returns/">Expected returns</a></li><li><a class="tocitem" href="../regularization/">Regularization of optimized portfolios</a></li><li><a class="tocitem" href="../adding_constraints/">Adding constraints</a></li></ul></li><li><span class="tocitem">Sustainable Finance</span><ul><li><a class="tocitem" href="../../Sustainable Finance/scoring_system/">Scoring System</a></li><li><a class="tocitem" href="../../Sustainable Finance/qp_problem_for_tilting/">QP Problem for Tilting</a></li><li><a class="tocitem" href="../../Sustainable Finance/qp_problem_for_enhanced_esg/">QP Problem for Enhanced ESG Score</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Portfolio Optimization</a></li><li class="is-active"><a href>The Markowitz framework</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>The Markowitz framework</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/tlorans/SustainableFinance/blob/master/docs/src/Portfolio Optimization/markowitz_framework.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="The-Markowitz-framework"><a class="docs-heading-anchor" href="#The-Markowitz-framework">The Markowitz framework</a><a id="The-Markowitz-framework-1"></a><a class="docs-heading-anchor-permalink" href="#The-Markowitz-framework" title="Permalink"></a></h1><h2 id="Notations"><a class="docs-heading-anchor" href="#Notations">Notations</a><a id="Notations-1"></a><a class="docs-heading-anchor-permalink" href="#Notations" title="Permalink"></a></h2><ul><li><p>We consider a universe of <span>$n$</span> assets</p></li><li><p class="math-container">\[x = (x_1,...,x_n)\]</p><p>is the vector of weights in the portfolio</p></li><li><p>The portfolio is fuly invested:</p></li></ul><p class="math-container">\[\sum^n_{i=1} x_i = 1_n^Tx = 1\]</p><ul><li><p class="math-container">\[R = (R_1,...,R_n)\]</p><p>is the vector of asset returns where <span>$R_i$</span> is the return of asset <span>$i$</span>.</p></li><li><p>The return of the portfolio is equal to:</p></li></ul><p class="math-container">\[R(x) = \sum^n_{i=1}x_iR_i = x^TR\]</p><ul><li><p class="math-container">\[\mu = E[R]\]</p>and <span>$\Sigma = E[(R-\mu)(R-\mu)^T]$</span> are the vector of expected returns and the covariance matrix of asset returns</li></ul><p>Let&#39;s implement a <code>Portfolio</code> struct to encode these first informations: </p><pre><code class="language-julia hljs">Base.@kwdef mutable struct Portfolio 
+    μ::Vector{Float64} # the expected returns 
+    σ::Vector{Float64} # volatiltiy
+    x::Vector{Float64} # Weights
+    C::Matrix # Correlation matrix
+    Σ::Union{Nothing, Matrix} = nothing # Covariance matrix
+end</code></pre><p>And create a first example:</p><pre><code class="language-julia hljs">example_1 = Portfolio(μ = [0.05, 0.06, 0.08, 0.06],
+                        σ = [0.15, 0.20, 0.25, 0.30],
+                        x = [1/4 for i in 1:4], # just equally-weighted portfolio,
+                        C = [1.0 0.0 0.0 0.0
+                            0.10 1.0 0.0 0.0
+                            0.4 0.7 1.0 0.0
+                            0.5 0.4 0.8 1.0
+                            ])</code></pre><h2 id="Computation-of-the-first-two-moments"><a class="docs-heading-anchor" href="#Computation-of-the-first-two-moments">Computation of the first two moments</a><a id="Computation-of-the-first-two-moments-1"></a><a class="docs-heading-anchor-permalink" href="#Computation-of-the-first-two-moments" title="Permalink"></a></h2><p>The expected return of the portfolio is:</p><p class="math-container">\[\mu(x) = E[R(x)] = E[x^TR] = x^T E[R] = x^T \mu\]</p><p>Implementing this in Julia:</p><pre><code class="language-julia hljs">using LinearAlgebra
+
+function get_portfolio_return(portfolio::Portfolio)
+    return portfolio.x&#39; * portfolio.μ # transpose of the vector of weights times the vector of expected reutnrs
+end
+
+get_portfolio_return(example_1)</code></pre><p>Whereas its variance is equal to:</p><p class="math-container">\[\sigma^2(x) = E[(R(x) - \mu(x))(R(x) -\mu(x))^T]\]</p><p class="math-container">\[= E[(x^T R - x^T \mu)(x^T R - x^T \mu)^T]\]</p><p class="math-container">\[= E[x^T(R-\mu)(R-\mu)^Tx]\]</p><p class="math-container">\[= x^T E[(R-\mu)(R-\mu)^T]x\]</p><p class="math-container">\[= x^T \Sigma x\]</p><p>To implement this in Julia, we need two functions. First we need to obtain the covariance matrix <span>$\Sigma$</span> based on the correlation matrix <span>$C$</span> given at the beginning:</p><pre><code class="language-julia hljs">function get_cov_from_corr!(portfolio::Portfolio)::Portfolio
+    D = diagm(portfolio.σ) # diagonal matrix of volatiltiy
+    portfolio.Σ = D * portfolio.C * D
+    return portfolio
+end
+
+get_cov_from_corr!(example_1) </code></pre><p>Then, we can obtain the volatility such as:</p><pre><code class="language-julia hljs">function get_portfolio_volatility(portfolio::Portfolio)
+    return sqrt(portfolio.x&#39; * portfolio.Σ * portfolio.x)
+end
+
+get_portfolio_volatility(example_1)</code></pre><h2 id="Efficient-frontier"><a class="docs-heading-anchor" href="#Efficient-frontier">Efficient frontier</a><a id="Efficient-frontier-1"></a><a class="docs-heading-anchor-permalink" href="#Efficient-frontier" title="Permalink"></a></h2><p>We have two equivalent optimization problems:</p><ul><li>Maximizing the expected return of the portfolio under a volatility constraint (<span>$\sigma$</span>-problem):</li></ul><p class="math-container">\[\begin{equation*}
+\begin{aligned}
+&amp; \text{max}
+&amp;&amp; \mu (x)
+&amp;&amp;&amp; {\text{u.c.}}
+&amp;&amp;&amp;&amp; \sigma(x) \leq \sigma^* \\
+\end{aligned}
+\end{equation*}\]</p><ul><li>Or minimizing the volatility of the portfolio under a return constraint (<span>$\mu$</span>-problem):</li></ul><p class="math-container">\[\begin{equation*}
+\begin{aligned}
+&amp; \text{min}
+&amp;&amp; \sigma(x)
+&amp;&amp;&amp; {\text{u.c.}}
+&amp;&amp;&amp;&amp; \mu(x) \geq \mu^*\\
+\end{aligned}
+\end{equation*}\]</p><p>Let&#39;s first implement a simulation for 1000 portfolios:</p><pre><code class="language-julia hljs">using Random, Plots
+
+Random.seed!(123)
+
+
+###### Efficient Frontier: Simulation
+
+# Number of assets 
+n = 4 
+
+function rand_weights(n::Int)
+    k = rand(n)
+    return k / sum(k)
+end
+
+rand_weights(n)
+
+function random_portfolio(μ::Vector{Float64}, σ::Vector{Float64}, C::Matrix, n::Int)::Portfolio
+    portfolio_random = Portfolio(μ = μ,
+                                σ = σ,
+                                x = rand_weights(n),
+                                C = C)
+    get_cov_from_corr!(portfolio_random)
+    return portfolio_random
+end
+
+μ = [0.05, 0.06, 0.08, 0.06]
+σ = [0.15, 0.20, 0.25, 0.30]
+C = [1.0 0.0 0.0 0.0
+    0.10 1.0 0.0 0.0
+    0.4 0.7 1.0 0.0
+    0.5 0.4 0.8 1.0
+    ]
+
+test_portfolio = random_portfolio(μ, σ, C, n)
+
+
+# number of observations 
+n_obs = 1000
+
+returns = zeros(n_obs)
+volatility = zeros(n_obs)
+
+for i in 1:n_obs
+    portf = random_portfolio(μ, σ, C, n)
+    returns[i] = get_portfolio_return(portf)
+    volatility[i] = get_portfolio_volatility(portf)
+end
+
+plot(volatility, returns, seriestype = :scatter, label = &quot;&quot;,
+    xlabel = &quot;Volatility&quot;, ylabel = &quot;Expected returns&quot;)</code></pre><p><img src="../markowitz_simulation.png" alt="&quot;markowitz&quot;"/></p><h2 id="Markowitz-trick"><a class="docs-heading-anchor" href="#Markowitz-trick">Markowitz trick</a><a id="Markowitz-trick-1"></a><a class="docs-heading-anchor-permalink" href="#Markowitz-trick" title="Permalink"></a></h2><p>Markowitz transforms the two original non-linear optimization problems into a quadratric optimization problem:</p><p class="math-container">\[\begin{equation*}
+\begin{aligned}
+&amp; x^*(\phi) = 
+&amp; &amp; {\text{arg max}}  x^T \mu - \frac{\phi}{2}x^T \Sigma x\\
+&amp; \text{u.c.}
+&amp; &amp; 1^T_n x = 1 \\
+\end{aligned}
+\end{equation*}\]</p><p>where <span>$\phi$</span> is a risk-aversion parameter:</p><ul><li><p class="math-container">\[\phi = 0\]</p><p>: we have <span>$\mu(x^*(0)) = \mu^+$</span></p></li><li><p>if <span>$\phi = \infty$</span>, the optimization problem becomes:</p></li></ul><p class="math-container">\[\begin{equation*}
+\begin{aligned}
+&amp; x^*(\infty) = 
+&amp; &amp; {\text{arg min}}  \frac{1}{2}x^T \Sigma x\\
+&amp; \text{u.c.}
+&amp; &amp; 1^T_n x = 1 \\
+\end{aligned}
+\end{equation*}\]</p><p>We have, in this case, <span>$\sigma(x^*(\infty)) = \sigma^-$</span>. This is the minimum variance (or MV) portfolio.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../capm/">Capital asset pricing model (CAPM) »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Thursday 10 February 2022 07:53">Thursday 10 February 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
