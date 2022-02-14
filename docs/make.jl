@@ -8,13 +8,16 @@ makedocs(
     modules = [SustainableFinance];
     pages = [
         "Home" => "index.md",
+        "Introduction to Optimization" => Any[
+            "Bisection Algorithm"=>"Introduction to Optimization/bisection_algorithm.md"
+        ],
         "Introduction to Portfolio Optimization" => Any[
             "The Markowitz framework"=>"Portfolio Optimization/markowitz_framework.md"
         ],
-        "Sustainable Finance" => Any[
-            "Scoring System" => "Sustainable Finance/scoring_system.md",
-            "QP Problem for Tilting" => "Sustainable Finance/qp_problem_for_tilting.md",
-            "QP Problem for Enhanced ESG Score" => "Sustainable Finance/qp_problem_for_enhanced_esg.md"
+        "ESG Investing" => Any[
+            "Scoring System" => "ESG Investing/scoring_system.md",
+            "QP Problem for Tilting" => "ESG Investing/qp_problem_for_tilting.md",
+            "QP Problem for Enhanced ESG Score" => "ESG Investing/qp_problem_for_enhanced_esg.md"
         ]
     ]
 )
