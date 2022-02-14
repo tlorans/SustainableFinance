@@ -149,18 +149,19 @@ portf = Portfolio(μ = μ, σ = σ, C = C, Σ = Σ, x = x_opt)
 returns = get_portfolio_return(portf)
 volatility = get_portfolio_volatility(portf)
 
-# phis = [i for i in 1:0.1:500]
+phis = [i for i in 1:0.1:500]
 
 
-# returns = zeros(length(phis))
-# volatility = zeros(length(phis))
-# for i in 1:length(phis)
-#     x = optimal_portfolio_markowitz(μ, Σ, phis[i])
-#     portf = Portfolio(μ = μ, σ = σ, C = C, Σ = Σ, x = x)
-#     returns[i] = get_portfolio_return(portf)
-#     volatility[i] = get_portfolio_volatility(portf)
-# end
+returns = zeros(length(phis))
+volatility = zeros(length(phis))
+for i in 1:length(phis)
+    x = optimal_portfolio_markowitz(μ, Σ, phis[i])
+    portf = Portfolio(μ = μ, σ = σ, C = C, Σ = Σ, x = x)
+    returns[i] = get_portfolio_return(portf)
+    volatility[i] = get_portfolio_volatility(portf)
+end
 
 
-# plot(volatility, returns, seriestype = :line, label = "",
-#     xlabel = "Volatility", ylabel = "Expected returns")
+plot(volatility, returns, seriestype = :line, label = "",
+    xlabel = "Volatility", ylabel = "Expected returns")
+

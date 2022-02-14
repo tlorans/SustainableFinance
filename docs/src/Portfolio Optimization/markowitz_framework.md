@@ -315,3 +315,40 @@ volatility = get_portfolio_volatility(portf)
 ```
 0.9456799462474924
 ```
+
+Let's simulate simulate this for several $\phi$ values and plot the resulting efficient frontier:
+```julia
+phis = [i for i in 1:0.1:500]
+
+returns = zeros(length(phis))
+volatility = zeros(length(phis))
+for i in 1:length(phis)
+    x = optimal_portfolio_markowitz(μ, Σ, phis[i])
+    portf = Portfolio(μ = μ, σ = σ, C = C, Σ = Σ, x = x)
+    returns[i] = get_portfolio_return(portf)
+    volatility[i] = get_portfolio_volatility(portf)
+end
+
+
+plot(volatility, returns, seriestype = :line, label = "",
+    xlabel = "Volatility", ylabel = "Expected returns")
+```
+
+!["efficientfrontier1"](efficient_frontier.png)
+
+## Solving $\mu-$ and $\gamma-$ problems
+
+Solving the $\mu$-problem or the $\sigma$-problem is equivalent to finding the optimal value of $\phi$ such that:
+
+$\mu(x^*(\phi))=\mu^*$ 
+
+or:
+
+$\sigma(x^*(\phi))=\sigma^*$
+
+We know that:
+
+- the functions $\mu(x^*(\phi))$ and $\sigma(x^*(\phi))$ are decreasing with respect to $\phi$
+- the functions $\mu(x^*(\phi))$ and $\sigma(x^*(\phi))$ are bounded
+
+Then, we can find the optimal value of $\phi$ (ie. the value of $\phi$ to attain a specific target of $\sigma^*$ or $\mu^*$) using the bisection algorithm (Newton-Raphson algorithm).
