@@ -12,15 +12,16 @@ The function values are of opposite sign (there is at least one zero crossing wh
 
 Each iteration perfoms these steps:
 
-- 1. Calculate $c$, the midpoint of the interval, $c = \frac{a+b}{2}$.
-- 2. Calculate the function value at the midpoint, $f(c)$.
-- 3. If converge is satisfactory (that is, $c-a$ is sufficiently small, or $|f(c)|$ is sufficiently small), return $c$ and stop iterating.
-- 4. Examine the sign of $f(c)$ and replace either $(a, f(a))$ or $(b,f(b))$ with $(c, f(c))$ so that there is a zero crossing within the new interval.
+1. Calculate $c$, the midpoint of the interval, $c = \frac{a+b}{2}$.
+2. Calculate the function value at the midpoint, $f(c)$.
+3. If converge is satisfactory (that is, $c-a$ is sufficiently small, or $|f(c)|$ is sufficiently small), return $c$ and stop iterating.
+4. Examine the sign of $f(c)$ and replace either $(a, f(a))$ or $(b,f(b))$ with $(c, f(c))$ so that there is a zero crossing within the new interval.
 
-Example 1:
+## Example
 
 Let's start with an easy problem: Consider $f(x) = (x-1)^2 - 4. 
-We know $f(3) = 0$; hence $x = 3$ is a root of $f(x)$. 
+
+We know $f(3) = 0$ ; hence $x = 3$ is a root of $f(x)$. 
 
 Let's implement it in Julia:
 ```julia
@@ -58,6 +59,11 @@ end
 c = (a + b) / 2
 print("c:", c, "\n")
 print("f(c):", f(c), "\n")
+```
 
-
+The output will be:
+```
+Converged at iteration: N = 33
+c:2.9999999998835847
+f(c):-4.656612873077393e-10
 ```
