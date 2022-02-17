@@ -8,11 +8,8 @@ makedocs(
     modules = [SustainableFinance];
     pages = [
         "Home" => "index.md",
-        "Introduction to Optimization" => Any[
-            "Bisection Algorithm"=>"Introduction to Optimization/bisection_algorithm.md",
-            "Newton's Method"=>"Introduction to Optimization/newton_method.md",
-            "Derivatives & Jacobian"=>"Introduction to Optimization/derivatives_jacobian.md"
-
+        "Mathematical Tools" => Any[
+            "Solutions of Nonlinear Equations"=>"Mathematical Tools/solutions_nonlinear.md"
         ],
         "Introduction to Portfolio Optimization" => Any[
             "Portfolio Simulation"=>"Portfolio Optimization/portfolio_simulation.md",
