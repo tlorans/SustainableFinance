@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Derivatives &amp; Jacobian · Julia for Sustainable Finance</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><script src="../../../copy.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Julia for Sustainable Finance</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Introduction to Optimization</span><ul><li><a class="tocitem" href="../bisection_algorithm/">Bisection Algorithm</a></li><li><a class="tocitem" href="../newton_method/">Newton&#39;s Method</a></li><li class="is-active"><a class="tocitem" href>Derivatives &amp; Jacobian</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Example"><span>Example</span></a></li></ul></li></ul></li><li><span class="tocitem">Introduction to Portfolio Optimization</span><ul><li><a class="tocitem" href="../../Portfolio Optimization/portfolio_simulation/">Portfolio Simulation</a></li><li><a class="tocitem" href="../../Portfolio Optimization/qp_formulation/">QP Formulation</a></li></ul></li><li><span class="tocitem">ESG Investing</span><ul><li><a class="tocitem" href="../../ESG Investing/scoring_system/">Scoring System</a></li><li><a class="tocitem" href="../../ESG Investing/qp_problem_for_tilting/">QP Problem for Tilting</a></li><li><a class="tocitem" href="../../ESG Investing/qp_problem_for_enhanced_esg/">QP Problem for Enhanced ESG Score</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Introduction to Optimization</a></li><li class="is-active"><a href>Derivatives &amp; Jacobian</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Derivatives &amp; Jacobian</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/tlorans/SustainableFinance/blob/master/docs/src/Introduction to Optimization/derivatives_jacobian.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Derivatives-and-Jacobian"><a class="docs-heading-anchor" href="#Derivatives-and-Jacobian">Derivatives &amp; Jacobian</a><a id="Derivatives-and-Jacobian-1"></a><a class="docs-heading-anchor-permalink" href="#Derivatives-and-Jacobian" title="Permalink"></a></h1><ul><li>The input is a vector such as <span>$x \in \mathbb{R}^m$</span>. If we use the standard basis of <span>$\mathbb{R}^m$</span>, we have:</li></ul><p class="math-container">\[x = x_1 e_1 + x_2 e_2 + \cdots + x_n e_m = \sum^m_{i=1}x_ie_i\]</p><ul><li>Then we can use a finite difference approximation to compute each column of <span>$A = [a^{col}_1 \cdots a^{col}_m]$</span> as </li></ul><p class="math-container">\[a^{col}_i = \frac{\partial f(x_0)}{ \partial x_i} = \frac{f(x_0 + he_i) - f(x_0 - he_i)}{2h}\]</p><ul><li>For the general case of <span>$f : \mathbb{R}^m \rightarrow \mathbb{R}^n$</span>, <span>$A$</span> is an <span>$n*m$</span> matrix and called the Jacobian of <span>$f$</span>, i.e.,</li></ul><p class="math-container">\[A_{n*m} = [a^{col}_1 \cdots  a^{col}_m] = \frac{\partial f(x)}{\partial x}\]</p><ul><li>Each column of the Jacobian <span>$a^{col}_i = \frac{\partial f(x)}{ \partial x_i} \in \mathbb{R}^n$</span> shows the rate of change of <span>$f$</span> along <span>$e_i$</span>.</li></ul><p>Let&#39;s implement the function in Julia:</p><pre><code class="language-julia hljs">using LinearAlgebra
+
+function Jacobian(func, x₀, h = 0.001)
+    # Numerical Jacobian of f:R^m -&gt; R^n 
+    m = length(x₀); # Domain dimension 
+    f₀ = func(x₀);
+    n = length(f₀); # Range dimension
+
+    if m == 1 # f:R -&gt; R^n 
+        return (func(x₀ .+ h) .- func(x₀ .- h)) ./ (2 * h)
+    else
+        Im = Matrix(1.0I, m, m); # Create standard basis for I_m 
+        A = zeros(n, m); # Create Jacobian matrix 
+        # Compute and fill in the columns of the Jacobian using central difference 
+        for i  = 1:m 
+            ei = Im[:, i:i]
+            A[:,i] = (func(x₀ + h * ei) - func(x₀ - h * ei)) / (2*h);
+        end
+        return A
+    end
+end </code></pre><h1 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h1><p>For the function</p><p class="math-container">\[f(x_1, x_2, x_3) := \left[
+\begin{array}{c}
+x_1 x_2 x_3 \\
+\log(2+\cos(x_1)) + x_2^{x_1}  \\
+ \frac{x_1 x_3}{1+ x_2^2}
+\end{array}
+\right]\]</p><p>we want to compute its Jacobian at the point:</p><p class="math-container">\[x_0 = \left[
+\begin{array}{c}
+\pi \\
+1.0  \\
+2.0
+\end{array}
+\right]\]</p><p>Let&#39;s test our function with Julia:</p><pre><code class="language-julia hljs">
+function f3(x)
+    return [x[1]*x[2]*x[3]; log(2+cos(x[1])) + x[2]^x[1]; (x[1]*x[3] / (1+x[2]^2))]
+end
+
+x₀ = [π; 1.0; 2.0] # initial guess 
+A = Jacobian(f3, x₀)</code></pre><p>Which gives us the Jacobian:</p><pre><code class="nohighlight hljs">3×3 Matrix{Float64}:
+ 2.0   6.28319  3.14159
+ 0.0   3.14159  0.0
+ 1.0  -3.14159  1.5708</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../newton_method/">« Newton&#39;s Method</a><a class="docs-footer-nextpage" href="../../Portfolio Optimization/portfolio_simulation/">Portfolio Simulation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Thursday 17 February 2022 06:46">Thursday 17 February 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
