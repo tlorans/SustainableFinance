@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Solutions of Nonlinear Equations · Julia for Sustainable Finance</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><script src="../../../copy.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Julia for Sustainable Finance</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Mathematical Tools</span><ul><li class="is-active"><a class="tocitem" href>Solutions of Nonlinear Equations</a><ul class="internal"><li><a class="tocitem" href="#Bisection-Algorithm"><span>Bisection Algorithm</span></a></li><li><a class="tocitem" href="#Newton&#39;s-method"><span>Newton&#39;s method</span></a></li><li><a class="tocitem" href="#Back-to-Newton&#39;s-method"><span>Back to Newton&#39;s method</span></a></li><li><a class="tocitem" href="#Derivatives-and-Jacobian"><span>Derivatives &amp; Jacobian</span></a></li><li><a class="tocitem" href="#Newton-Raphson-for-Vector-Functions"><span>Newton-Raphson for Vector Functions</span></a></li></ul></li></ul></li><li><span class="tocitem">Introduction to Portfolio Optimization</span><ul><li><a class="tocitem" href="../../Portfolio Optimization/portfolio_simulation/">Portfolio Simulation</a></li><li><a class="tocitem" href="../../Portfolio Optimization/qp_formulation/">QP Formulation</a></li></ul></li><li><span class="tocitem">ESG Investing</span><ul><li><a class="tocitem" href="../../ESG Investing/scoring_system/">Scoring System</a></li><li><a class="tocitem" href="../../ESG Investing/qp_problem_for_tilting/">QP Problem for Tilting</a></li><li><a class="tocitem" href="../../ESG Investing/qp_problem_for_enhanced_esg/">QP Problem for Enhanced ESG Score</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Mathematical Tools</a></li><li class="is-active"><a href>Solutions of Nonlinear Equations</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Solutions of Nonlinear Equations</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/tlorans/SustainableFinance/blob/master/docs/src/Mathematical Tools/solutions_nonlinear.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Solutions-of-Nonlinear-Equations"><a class="docs-heading-anchor" href="#Solutions-of-Nonlinear-Equations">Solutions of Nonlinear Equations</a><a id="Solutions-of-Nonlinear-Equations-1"></a><a class="docs-heading-anchor-permalink" href="#Solutions-of-Nonlinear-Equations" title="Permalink"></a></h1><p>A solution to an equation <span>$f(x) = 0$</span> is called a root, that is <span>$x^*$</span> is a root of <span>$f(x)=0$</span> if </p><p class="math-container">\[f(x^*) = 0\]</p><p>One can find a root of a function $ f : \mathbb{R} \rightarrow \mathbb{R}$ only if the function is continuous, i.e. if you can drow the graph of <span>$y = f(x)$</span> on a sheet of paper without lifting your pencil. </p><h2 id="Bisection-Algorithm"><a class="docs-heading-anchor" href="#Bisection-Algorithm">Bisection Algorithm</a><a id="Bisection-Algorithm-1"></a><a class="docs-heading-anchor-permalink" href="#Bisection-Algorithm" title="Permalink"></a></h2><p>We begin with the most intuitive method for finding roots of scalar equations </p><p class="math-container">\[f(x) = 0\]</p><p>Where $ f : \mathbb{R} \rightarrow \mathbb{R}$ (i.e. <span>$f$</span> maps real numbers to real numbers. )</p><h3 id="Intermediate-Value-Theorem"><a class="docs-heading-anchor" href="#Intermediate-Value-Theorem">Intermediate Value Theorem</a><a id="Intermediate-Value-Theorem-1"></a><a class="docs-heading-anchor-permalink" href="#Intermediate-Value-Theorem" title="Permalink"></a></h3><p>Assuming that <span>$f$</span> is a continuous real valued function and we know two real numbers <span>$a&lt;b$</span> such that <span>$f(a)*f(b) &lt; 0$</span>. Then ehre exists a real number <span>$c$</span> such that:</p><ol><li><p class="math-container">\[a &lt; c &lt; b\]</p><p>(<span>$c$</span> is between <span>$a$</span> and <span>$b$</span>)</p></li><li><p class="math-container">\[f(c) = 0\]</p><p>(<span>$c$</span> is a root)</p></li></ol><p>The values <span>$a$</span> and <span>$b$</span> are said to bracket the root <span>$c$</span>.</p><h3 id="Implementation"><a class="docs-heading-anchor" href="#Implementation">Implementation</a><a id="Implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation" title="Permalink"></a></h3><p>Let&#39;s take an example with the function</p><p class="math-container">\[f(x) = 0.2x^5 + x^3 + 3x + 1\]</p><p>Let&#39;s implement and plot this function in Julia to get a sens of it:</p><pre><code class="language-julia hljs">using Plots
+
+f(x) = 0.2*x^5+x^3+3*x+1 # our function 
+f_2(x) = 0 # utility function to plot the zero line
+plot(f, label = &quot;&quot;)
+plot!(f_2, label = &quot;&quot;)</code></pre><p><img src="../fig_11.2.png" alt="&quot;plot of a function&quot;"/></p><p>Bisection method is a root-finding method that applies to any continuous functions for which one knows two values with opposite signs.</p><p>The method consists of repeatedly bisecting the interval defined by these values and then selecting the subinterval in which the function changes sign, and therefore must contain a root. </p><h3 id="Iteration-tasks"><a class="docs-heading-anchor" href="#Iteration-tasks">Iteration tasks</a><a id="Iteration-tasks-1"></a><a class="docs-heading-anchor-permalink" href="#Iteration-tasks" title="Permalink"></a></h3><p>The input for the method is a continuous function <span>$f$</span>, an interval <span>$[a,b]$</span>, and the function values <span>$f(a)$</span> and <span>$f(b)$</span>.</p><p>The function values are of opposite sign (there is at least one zero crossing whitin the interval). </p><p>Each iteration perfoms these steps:</p><ol><li>Calculate <span>$c$</span>, the midpoint of the interval, <span>$c = \frac{a+b}{2}$</span>.</li><li>Calculate the function value at the midpoint, <span>$f(c)$</span>.</li><li>If converge is satisfactory (that is, <span>$c-a$</span> is sufficiently small, or <span>$|f(c)|$</span> is sufficiently small), return <span>$c$</span> and stop iterating.</li><li>Examine the sign of <span>$f(c)$</span> and replace either <span>$(a, f(a))$</span> or <span>$(b,f(b))$</span> with <span>$(c, f(c))$</span> so that there is a zero crossing within the new interval.</li></ol><h3 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h3><p>Let&#39;s start with an easy problem: Consider f(x) = (x-1)^2 - 4. </p><p>We know <span>$f(3) = 0$</span> ; hence <span>$x = 3$</span> is a root of <span>$f(x)$</span>. </p><p>Let&#39;s implement it in Julia:</p><pre><code class="language-julia hljs">function f(x)
+    return (x-1)^2 - 4 
+end
+
+
+a = 0; b = 5; # The interval 
+delta = 1e-9; # the convergence threshold
+
+# Set a max iteration so we don&#39;t get stuck in the loop forever 
+MAX_ITER = 100;
+N = 1; # counter for iteration 
+
+while N &lt; MAX_ITER
+    # Step 1: calculate c, the midpoint of the interval 
+    c = (a + b) / 2;
+    # Step 2: calculate the function value at the midpoint c
+    fc = f(c);
+    # Step 3: if converge is satisfactory (c-a sufficiently small or absolute function value sufficiently small), return C and stop
+    if abs(c-a) &lt; delta || abs(fc) &lt; delta 
+        println(&quot;Converged at iteration: N = &quot;, N)
+        break 
+    end
+    N += 1
+    # Step 4: examine the sign of f(c) and replace either (a, f(a)) or (b, f(b)) with (c, f(c)) so that there is a zero crossing the new interval
+    if sign(fc) == sign(f(a)) # update the search interval 
+        a = c;
+    else
+        b = c;
+    end
+end
+
+c = (a + b) / 2
+print(&quot;c:&quot;, c, &quot;\n&quot;)
+print(&quot;f(c):&quot;, f(c), &quot;\n&quot;)</code></pre><p>The output will be:</p><pre><code class="nohighlight hljs">Converged at iteration: N = 33
+c:2.9999999998835847
+f(c):-4.656612873077393e-10</code></pre><h2 id="Newton&#39;s-method"><a class="docs-heading-anchor" href="#Newton&#39;s-method">Newton&#39;s method</a><a id="Newton&#39;s-method-1"></a><a class="docs-heading-anchor-permalink" href="#Newton&#39;s-method" title="Permalink"></a></h2><p>Newton&#39;s method is a root-finding algorithm which produces successively better approximations to the roots (or zeros) of a real-valued function.</p><p>The idea is to start with an initial guess which is reasonably close to the true root, then to approximate the function by its tangent line using calculus, and finally to compute the x-intercept of this tangent line by algebra.</p><p>The equation of the tangent line to the curve <span>$y = f(x)$</span> at <span>$x = x_n$</span> is:</p><p class="math-container">\[y = f&#39;(x_n)(x-x_n)+f(x_n)\]</p><p>Where <span>$f&#39;$</span> denotes the derivative.</p><p>The derivative of <span>$f$</span> shows its rate of change with respect to <span>$x$</span>. Assuming no knowledge of calculs, we use an approximation method called finite difference method to replace the derivative term.</p><h3 id="Finite-difference-method"><a class="docs-heading-anchor" href="#Finite-difference-method">Finite difference method</a><a id="Finite-difference-method-1"></a><a class="docs-heading-anchor-permalink" href="#Finite-difference-method" title="Permalink"></a></h3><p>Finite differences approximate the derivatives of functions via discretizations. Three types are commonly considerd: forward, backward and central finite differences. Here we will introduce central finite differences only, because it gives the best approximation of the derivative.</p><p>Consider <span>$f(x)$</span> and its derivative at <span>$x = a$</span>, i.e., <span>$f&#39;(a)$</span>. A central finite difference approximation of the derivative is given by:</p><p class="math-container">\[f&#39;(a) = \frac{f(a+h) - f(a-h)}{2h}\]</p><p>The finite difference method relies on discretizing a function on a grid.</p><h2 id="Back-to-Newton&#39;s-method"><a class="docs-heading-anchor" href="#Back-to-Newton&#39;s-method">Back to Newton&#39;s method</a><a id="Back-to-Newton&#39;s-method-1"></a><a class="docs-heading-anchor-permalink" href="#Back-to-Newton&#39;s-method" title="Permalink"></a></h2><p>We now replace the derivative in <span>$y = f&#39;(x_n)(x - x_n) + f(x_n)$</span> with its finite difference approximation.</p><p>To find a root of <span>$f(x)$</span>, we set <span>$y=0$</span>.</p><p class="math-container">\[y = \frac{f(x_n+h) - f(x_n - h)}{2h}(x-x_n)+f(x_n)=0\]</p><p>and </p><p class="math-container">\[x = x_n - 2h \frac{f(x_n)}{f(x_n+h)-f(x_n-h)}\]</p><p>To use this last formula iteratively, we use the following succession rule:</p><p class="math-container">\[x_n+1 = x_n - 2h \frac{f(x_n)}{f(x_n+h)-f(x_n-h)}\]</p><p>Starting with an initial guess, <span>$x_0$</span>, that is near the solution, we can iterate to find the root. It is important to choose a sufficiently smalll <span>$h$</span> to reduce the discretization error.</p><h3 id="Example-2"><a class="docs-heading-anchor" href="#Example-2">Example</a><a class="docs-heading-anchor-permalink" href="#Example-2" title="Permalink"></a></h3><p>Let&#39;s consider the same example than with the bisection algorithm: we consider <span>$f(x) = (x-1)^2 - 4$</span>.</p><p>We know <span>$f(3) = 0$</span> ; hence <span>$x = 3$</span> is a root of <span>$f(x)$</span>. We pick <span>$x_0 = 2$</span> as the initial guess.</p><p>In Julia:</p><pre><code class="language-julia hljs">function f(x)
+    return (x-1)^2 - 4
+end
+
+x₀ = 2; h = 0.01/2; # initial guess x₀ and step size h 
+delta = 1e-9; # set a convergence threshold
+
+# set a max iteration so we don&#39;t get stuck in the loop 
+MAX_ITER = 100;
+N = 1; # counter for iteration 
+while N &lt; MAX_ITER
+    # evaluate f at current guess 
+    f₀ = f(x₀ - h); # f(xₙ - h)
+    f₁ = f(x₀); # f(xₙ)
+    f₂ = f(x₀ + h); # f(xₙ + h)
+    df = f₂ - f₀ # approximate the derivative with finite difference
+    if abs(df) &lt; delta 
+        println(&quot;Newton&#39;s method did not converge; derivative is near zero.&quot;)
+        break 
+    else
+        dx = -2*h * (f₁ / (f₂ - f₀)); # finite difference approximation
+    end
+    if abs(dx) &lt; delta
+        println(&quot;Converged at iteration: N = &quot;, N)
+        break 
+    else
+        x₀ = x₀ + dx; # find next xₙ
+    end
+    N += 1;
+end
+
+print(&quot;root: &quot;, x₀, &quot;\n&quot;)
+print(&quot;f(root): &quot;, f(x₀), &quot;\n&quot;) </code></pre><p>Which gives:</p><pre><code class="nohighlight hljs">Converged at iteration: N = 6
+root: 3.000000000000002
+f(root): 8.881784197001252e-15</code></pre><h2 id="Derivatives-and-Jacobian"><a class="docs-heading-anchor" href="#Derivatives-and-Jacobian">Derivatives &amp; Jacobian</a><a id="Derivatives-and-Jacobian-1"></a><a class="docs-heading-anchor-permalink" href="#Derivatives-and-Jacobian" title="Permalink"></a></h2><ul><li>The input is a vector such as <span>$x \in \mathbb{R}^m$</span>. If we use the standard basis of <span>$\mathbb{R}^m$</span>, we have:</li></ul><p class="math-container">\[x = x_1 e_1 + x_2 e_2 + \cdots + x_n e_m = \sum^m_{i=1}x_ie_i\]</p><ul><li>Then we can use a finite difference approximation to compute each column of <span>$A = [a^{col}_1 \cdots a^{col}_m]$</span> as </li></ul><p class="math-container">\[a^{col}_i = \frac{\partial f(x_0)}{ \partial x_i} = \frac{f(x_0 + he_i) - f(x_0 - he_i)}{2h}\]</p><ul><li>For the general case of <span>$f : \mathbb{R}^m \rightarrow \mathbb{R}^n$</span>, <span>$A$</span> is an <span>$n*m$</span> matrix and called the Jacobian of <span>$f$</span>, i.e.,</li></ul><p class="math-container">\[A_{n*m} = [a^{col}_1 \cdots  a^{col}_m] = \frac{\partial f(x)}{\partial x}\]</p><ul><li>Each column of the Jacobian <span>$a^{col}_i = \frac{\partial f(x)}{ \partial x_i} \in \mathbb{R}^n$</span> shows the rate of change of <span>$f$</span> along <span>$e_i$</span>.</li></ul><p>Let&#39;s implement the function in Julia:</p><pre><code class="language-julia hljs">using LinearAlgebra
+
+function Jacobian(func, x₀, h = 0.001)
+    # Numerical Jacobian of f:R^m -&gt; R^n 
+    m = length(x₀); # Domain dimension 
+    f₀ = func(x₀);
+    n = length(f₀); # Range dimension
+
+    if m == 1 # f:R -&gt; R^n 
+        return (func(x₀ .+ h) .- func(x₀ .- h)) ./ (2 * h)
+    else
+        Im = Matrix(1.0I, m, m); # Create standard basis for I_m 
+        A = zeros(n, m); # Create Jacobian matrix 
+        # Compute and fill in the columns of the Jacobian using central difference 
+        for i  = 1:m 
+            ei = Im[:, i:i]
+            A[:,i] = (func(x₀ + h * ei) - func(x₀ - h * ei)) / (2*h);
+        end
+        return A
+    end
+end </code></pre><h3 id="Example-3"><a class="docs-heading-anchor" href="#Example-3">Example</a><a class="docs-heading-anchor-permalink" href="#Example-3" title="Permalink"></a></h3><p>For the function</p><p class="math-container">\[f(x_1, x_2, x_3) := \left[
+\begin{array}{c}
+x_1 x_2 x_3 \\
+\log(2+\cos(x_1)) + x_2^{x_1}  \\
+ \frac{x_1 x_3}{1+ x_2^2}
+\end{array}
+\right]\]</p><p>we want to compute its Jacobian at the point:</p><p class="math-container">\[x_0 = \left[
+\begin{array}{c}
+\pi \\
+1.0  \\
+2.0
+\end{array}
+\right]\]</p><p>Let&#39;s test our function with Julia:</p><pre><code class="language-julia hljs">
+function f3(x)
+    return [x[1]*x[2]*x[3]; log(2+cos(x[1])) + x[2]^x[1]; (x[1]*x[3] / (1+x[2]^2))]
+end
+
+x₀ = [π; 1.0; 2.0] # initial guess 
+A = Jacobian(f3, x₀)</code></pre><p>Which gives us the Jacobian:</p><pre><code class="nohighlight hljs">3×3 Matrix{Float64}:
+ 2.0   6.28319  3.14159
+ 0.0   3.14159  0.0
+ 1.0  -3.14159  1.5708</code></pre><h2 id="Newton-Raphson-for-Vector-Functions"><a class="docs-heading-anchor" href="#Newton-Raphson-for-Vector-Functions">Newton-Raphson for Vector Functions</a><a id="Newton-Raphson-for-Vector-Functions-1"></a><a class="docs-heading-anchor-permalink" href="#Newton-Raphson-for-Vector-Functions" title="Permalink"></a></h2><ul><li><p>Let <span>$x_k$</span> be our current approximation of a root of the function <span>$f$</span>.</p></li><li><p>We write the linear approximation of <span>$f$</span> about <span>$x_k$</span> as:</p></li></ul><p class="math-container">\[f(x) \approx f(x_k) + A(x-x_k)\]</p><p>Where <span>$A = \frac{\partial f(x_k)}{\partial x}$</span></p><h3 id="Iteration-tasks-2"><a class="docs-heading-anchor" href="#Iteration-tasks-2">Iteration tasks</a><a class="docs-heading-anchor-permalink" href="#Iteration-tasks-2" title="Permalink"></a></h3><p>We can formulate the Newton-Raphson algorithm such as:</p><ol><li>Start with an initial guess <span>$x_0$</span> <span>$(k=0)$</span></li><li>Solve the linear system <span>$A\delta x_k = -f(x_k)$</span></li><li>Update the estimated root <span>$x_{k+1} = x_k + \delta x_k$</span></li><li>Repeat (go back to step 2) until convergence</li></ol></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../../Portfolio Optimization/portfolio_simulation/">Portfolio Simulation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Thursday 17 February 2022 07:55">Thursday 17 February 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
