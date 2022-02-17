@@ -10,11 +10,13 @@ makedocs(
         "Home" => "index.md",
         "Introduction to Optimization" => Any[
             "Bisection Algorithm"=>"Introduction to Optimization/bisection_algorithm.md",
-            "Newton's Method"=>"Introduction to Optimization/newton_method.md"
+            "Newton's Method"=>"Introduction to Optimization/newton_method.md",
+            "Derivatives & Jacobian"=>"Introduction to Optimization/derivatives_jacobian.md"
 
         ],
         "Introduction to Portfolio Optimization" => Any[
-            "The Markowitz framework"=>"Portfolio Optimization/markowitz_framework.md"
+            "Portfolio Simulation"=>"Portfolio Optimization/portfolio_simulation.md",
+            "QP Formulation"=>"Portfolio Optimization/qp_formulation.md"
         ],
         "ESG Investing" => Any[
             "Scoring System" => "ESG Investing/scoring_system.md",
