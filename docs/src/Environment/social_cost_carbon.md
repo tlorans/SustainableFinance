@@ -294,11 +294,12 @@ end
 We can now use `Mimi`to bind the `grosseconomy`, the `emissions`, the `climate` and the `damages` components together, in order to solve for the emissions level of the global economy over time and the resulting damages.
 
 ```julia
+# STEP 2: CONSTRUCT A MODEL BY BINDING BOTH COMPONENTS 
 
 # if anay variables of one component are parameters for another, connect_param! is
 # used to couple the two
 
-function construct_model()
+function construct_model(;marginal = false)
     m = Model()
 
     set_dimension!(m, :time, collect(2015:1:2100))
@@ -323,7 +324,13 @@ function construct_model()
 
     # update parameters for the emissions component 
     update_param!(m, :emissions, :ω, [(1. - 0.002)^t * 0.07 for t in 1:86])
-    update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
+    
+    if marginal # we'll see later the use of this
+        pulse = 1/1e10 # units of emissions are Gt then we convert 1 ton of pulse in Gt 
+        update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * (7.92 + pulse) for t in 1:86])
+    else
+        update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
+    end
 
     # update parameters for the climate component 
     update_param!(m, :climate, :CO2_AT_0, 3120)
@@ -413,4 +420,40 @@ You can also explore interactively all the variables in your model with the foll
 ```julia
 # Observe all model result graphs in UI
 explore(m)
+```
+
+## Computing Present-Day Values of Damages
+
+So, now that we have our estimated model, we need to convert future damages into their present-day values and sum to determine total damages:
+```julia
+# STEP 5 PRESENT VALUE OF DAMAGES IN BASELINE SCENARIO
+discount_rate = 0.035 # value recommended by the VBA
+discount_factors = [(1/(1 + discount_rate))^((t-1)) for t in 1:86] 
+damages_usd = getdataframe(m, :damages, :Ω)
+present_value_damages = sum(discount_factors .* damages_usd[:,:Ω])
+```
+Which outputs:
+```
+35.86557996740484
+```
+That means a 35.8 trillion USD present-value of expected damages in our baseline scenario!
+
+## Marginal Model and SCC
+
+Now, we just need to repeat the process by including an increase of 1 ton of $CO_2$ emitted (what we call the marginal model), compute the present-value of damages and the differential with the baseline model. This differential is the SCC!
+
+```julia 
+# STEP 6 RUN THE MARGINAL MODEL AND COMPUTE THE SCC
+
+m2 = construct_model(marginal = true) # now we see the use of the marginal keyword!
+run(m2)
+
+damages_usd_m2 = getdataframe(m2, :damages, :Ω)
+present_value_damages_m2 = sum(discount_factors .* damages_usd_m2[:,:Ω])
+
+scc = (present_value_damages_m2 - present_value_damages) * 10^12 # to express in USD per ton rather than trillion USD
+``` 
+Which gives the following SCC:
+```
+445.346870492358
 ```

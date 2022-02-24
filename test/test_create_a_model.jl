@@ -140,7 +140,7 @@ end
 # if anay variables of one component are parameters for another, connect_param! is
 # used to couple the two
 
-function construct_model()
+function construct_model(;marginal = false)
     m = Model()
 
     set_dimension!(m, :time, collect(2015:1:2100))
@@ -165,7 +165,13 @@ function construct_model()
 
     # update parameters for the emissions component 
     update_param!(m, :emissions, :ω, [(1. - 0.002)^t * 0.07 for t in 1:86])
-    update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
+    
+    if marginal
+        pulse = 1/1e10 # units of emissions are Gt then we convert 1 ton of pulse in Gt 
+        update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * (7.92 + pulse) for t in 1:86])
+    else
+        update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
+    end
 
     # update parameters for the climate component 
     update_param!(m, :climate, :CO2_AT_0, 3120)
@@ -234,6 +240,20 @@ Mimi.plot(m, :damages, :D)
 # observe all model result graphs in UI 
 explore(m)
 
+# STEP 5 PRESENT VALUE OF DAMAGES IN BASELINE SCENARIO
 
+discount_rate = 0.035
+discount_factors = [(1/(1 + discount_rate))^((t-1)) for t in 1:86] 
+damages_usd = getdataframe(m, :damages, :Ω)
+present_value_damages = sum(discount_factors .* damages_usd[:,:Ω])
 
+# STEP 6 RUN THE MARGINAL MODEL 
+
+m2 = construct_model(marginal = true)
+run(m2)
+
+damages_usd_m2 = getdataframe(m2, :damages, :Ω)
+present_value_damages_m2 = sum(discount_factors .* damages_usd_m2[:,:Ω])
+
+scc = (present_value_damages_m2 - present_value_damages) * 10^12
 
