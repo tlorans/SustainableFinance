@@ -109,6 +109,28 @@ end
 end
 
 
+# component for damages 
+@defcomp damages begin
+    D = Variable(index = [time]) # Damages (in % of gross output)
+    Ω = Variable(index  = [time]) # Damages in USD
+
+    η₁ = Parameter() # Parameter of damage function 
+    η₂ = Parameter() # Parameter of damage function 
+    η₃ = Parameter() # Parameter of damage function 
+
+    T_AT = Parameter(index = [time]) # Atmospheric temperature increase 
+    Y = Parameter(index = [time]) # Gross output 
+
+    function run_timestep(p, v, d, t)
+
+        v.D[t] = 1 - 1 / (1 + p.η₁ * p.T_AT[t] + p.η₂ * p.T_AT[t]^2 + p.η₃ * p.T_AT[t]^6.754)
+        v.Ω[t] = v.D[t] * p.Y[t]
+        
+    end
+
+end
+
+
 # STEP 2: CONSTRUCT A MODEL BY BINDING BOTH COMPONENTS 
 
 # if anay variables of one component are parameters for another, connect_param! is
@@ -123,6 +145,7 @@ function construct_model()
     add_comp!(m, grosseconomy)
     add_comp!(m, emissions)
     add_comp!(m, climate)
+    add_comp!(m, damages)
 
     """
     update_param! used to assign values each component parameter 
@@ -165,11 +188,21 @@ function construct_model()
     update_param!(m, :climate, :t_3, 0.005)
     update_param!(m, :climate, :S, 3)
 
+    # update parameters for damages function 
+
+    update_param!(m, :damages, :η₁, 0)
+    update_param!(m, :damages, :η₂, 0.00284)
+    update_param!(m, :damages, :η₃, 0.000005)
+
     # connect parameters for the emissions component 
     connect_param!(m, :emissions, :Y, :grosseconomy, :Y)
 
     # connect parameters for the climate component 
     connect_param!(m, :climate, :E, :emissions, :E)
+
+    # connect parameters for the damages component
+    connect_param!(m, :damages, :T_AT, :climate, :T_AT)
+    connect_param!(m, :damages, :Y, :grosseconomy, :Y)
 
     return m
 end
