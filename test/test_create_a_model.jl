@@ -21,7 +21,7 @@ using Mimi
             # and parameters 
             v.K[t] = p.k0 
         else
-            v.K[t] = (1 - p.δ)^5 * v.K[t-1] + v.Y[t-1] * p.s[t-1] * 5
+            v.K[t] = (1 - p.δ) * v.K[t-1] + v.Y[t-1] * p.s[t-1]
         end
 
         # Define an equation for YGROSS 
@@ -32,13 +32,17 @@ end
 # component for greenhouse gas emissions 
 @defcomp emissions begin 
     E = Variable(index = [time]) # Total greenhouse gas emissions 
-    σ = Parameter(index = [time]) # Emissions output ratio 
+    M = Variable(index = [time]) # Energy consumption
+
+    ω = Parameter(index = [time]) # CO2 intensity of energy mix
+    ϵ = Parameter(index = [time]) # energy intensity of output
     Y = Parameter(index = [time]) # Gross output - now a Parameter
 
     function run_timestep(p, v, d, t)
-
+        # equation for M 
+        v.M[t] = p.ϵ[t] * p.Y[t] # note the p. in front of gross 
         # Define an equation for E 
-        v.E[t] = p.Y[t] * p.σ[t] / 1000 # note the p. in front of gross 
+        v.E[t] = p.ω[t] * v.M[t]
     end
 end
 
@@ -139,7 +143,7 @@ end
 function construct_model()
     m = Model()
 
-    set_dimension!(m, :time, collect(2015:5:2110))
+    set_dimension!(m, :time, collect(2015:1:2100))
 
     # Order matters here, if the emissions component defined first, error
     add_comp!(m, grosseconomy)
@@ -152,15 +156,16 @@ function construct_model()
     with an external connection to an unshared model param 
     """
     # Update parameters for the grosseconomy component
-    update_param!(m, :grosseconomy, :L, [(1. + 0.015)^t * 6404 for t in 1:20])
-    update_param!(m, :grosseconomy, :TFP, [(1 + 0.065)^t * 3.57 for t in 1:20])
-    update_param!(m, :grosseconomy, :s, ones(20) .* 0.22)
+    update_param!(m, :grosseconomy, :L, [(1. + 0.003)^t * 6.404 for t in 1:86])
+    update_param!(m, :grosseconomy, :TFP, [(1 + 0.01)^t * 3.57 for t in 1:86])
+    update_param!(m, :grosseconomy, :s, ones(86) .* 0.22)
     update_param!(m, :grosseconomy, :δ, 0.1)
     update_param!(m, :grosseconomy, :k0, 130.)
     update_param!(m, :grosseconomy, :β, 0.3)
 
     # update parameters for the emissions component 
-    update_param!(m, :emissions, :σ, [(1. - 0.005)^t * 0.99 for t in 1:20])
+    update_param!(m, :emissions, :ω, [(1. - 0.002)^t * 0.07 for t in 1:86])
+    update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
 
     # update parameters for the climate component 
     update_param!(m, :climate, :CO2_AT_0, 3120)
@@ -219,7 +224,12 @@ getdataframe(m, :climate, :T_AT)
 
 # STEP 4 VISUALIZE
 # plot model results 
+Mimi.plot(m, :grosseconomy, :Y)
 Mimi.plot(m, :emissions, :E)
+Mimi.plot(m, :climate, :T_AT)
+Mimi.plot(m, :damages, :D)
+
+
 
 # observe all model result graphs in UI 
 explore(m)

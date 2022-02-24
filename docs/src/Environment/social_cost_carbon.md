@@ -46,8 +46,6 @@ We describe here a really simple toy world economy, with gross output and capita
 
 Let's first implement the economy component:
 ```julia 
-using Mimi
-
 # gross economy component
 @defcomp grosseconomy begin 
     Y = Variable(index = [time]) # Gross output 
@@ -66,43 +64,54 @@ using Mimi
             # and parameters 
             v.K[t] = p.k0 
         else
-            v.K[t] = (1 - p.δ)^5 * v.K[t-1] + v.Y[t-1] * p.s[t-1] * 5 # ^5 because of time steps by 5 years
+            v.K[t] = (1 - p.δ) * v.K[t-1] + v.Y[t-1] * p.s[t-1]
         end
 
         # Define an equation for YGROSS 
-        v.Y[t] = p.TFP[t] * v.K[t]^p.β * p.l[t]^(1-p.β)
+        v.Y[t] = p.TFP[t] * v.K[t]^p.β * p.L[t]^(1-p.β)
     end
 end
 ```
+
+
 ## The Emissions Component 
 
-The emissions component is also really simplistic. Here the only variable represent the total greenhouse gas emissions emitted, functions of the gross output (here as an exogeneous variable, coming from the economy component) and the emissions to output ratio.
+The emissions component is also really simplistic. The energy consumption is modelled as a function of the energy to output ratio and the gross output. Then the emissions are driven by the carbon intensity of the energy mix and the energy consumption. 
+
+Note that the gross output is treated as an exogenous variable here.
 
 #### Endogeneous Variable
 
 | Notation      | Description | Equation | 
 | ----------- | ----------- |----------- |
-| $E_t$  |  Total greenhouse gas emissions | $E_t = Y_t * \sigma_t$    |
+| $M_t$  |  Energy necessary for the production of output | $M_t = \epsilon_t * Y_t$    |
+| $E_t$  |  Total greenhouse gas emissions | $E_t = \omega_t * M_t$    |
 
 #### Exogeneous Variables
 | Notation      | Description |  
 | ----------- | ----------- |
-| $\sigma_t$  |  Emissions output ratio  | 
+| $\epsilon_t$  | Energy to output ratio (EJ/trillion USD)  |
+| $\omega_t$  | $CO_2$ intensity (Gt/EJ)  | 
 | $Y_t$   | Gross output |
 
 #### Julia Implementation
 Let's implement it in Julia:
 ```julia
+
 # component for greenhouse gas emissions 
 @defcomp emissions begin 
     E = Variable(index = [time]) # Total greenhouse gas emissions 
-    σ = Parameter(index = [time]) # Emissions output ratio 
+    M = Variable(index = [time]) # Energy consumption
+
+    ω = Parameter(index = [time]) # CO2 intensity of energy mix
+    ϵ = Parameter(index = [time]) # energy intensity of output
     Y = Parameter(index = [time]) # Gross output - now a Parameter
 
     function run_timestep(p, v, d, t)
-
-    # Define an equation for E 
-    v.E[t] = p.Y[t] * p.σ[t] # note the p. in front of gross 
+        # equation for M 
+        v.M[t] = p.ϵ[t] * p.Y[t] # note the p. in front of gross 
+        # Define an equation for E 
+        v.E[t] = p.ω[t] * v.M[t]
     end
 end
 ```
@@ -252,9 +261,37 @@ The Damages Component use the Damage function formulated by Weitzman (2012), wit
 |  $T_{AT_t}$  |  Atmospheric temperature over pre-industrial levels (°C)|
 |  $Y_t$  |  Gross output |
 
+#### Julia Implementation 
+
+Let's implement it in Julia:
+```julia
+
+# component for damages 
+@defcomp damages begin
+    D = Variable(index = [time]) # Damages (in % of gross output)
+    Ω = Variable(index  = [time]) # Damages in USD
+
+    η₁ = Parameter() # Parameter of damage function 
+    η₂ = Parameter() # Parameter of damage function 
+    η₃ = Parameter() # Parameter of damage function 
+
+    T_AT = Parameter(index = [time]) # Atmospheric temperature increase 
+    Y = Parameter(index = [time]) # Gross output 
+
+    function run_timestep(p, v, d, t)
+
+        v.D[t] = 1 - 1 / (1 + p.η₁ * p.T_AT[t] + p.η₂ * p.T_AT[t]^2 + p.η₃ * p.T_AT[t]^6.754)
+        v.Ω[t] = v.D[t] * p.Y[t]
+        
+    end
+
+end
+```
+
+
 ## Binding All Components Together
 
-We can now use `Mimi`to bind the `grosseconomy` and the `emissions` components together, in order to solve for the emissions level of the global economy over time.
+We can now use `Mimi`to bind the `grosseconomy`, the `emissions`, the `climate` and the `damages` components together, in order to solve for the emissions level of the global economy over time and the resulting damages.
 
 ```julia
 
@@ -264,33 +301,74 @@ We can now use `Mimi`to bind the `grosseconomy` and the `emissions` components t
 function construct_model()
     m = Model()
 
-    set_dimension!(m, :time, collect(2015:5:2110))
+    set_dimension!(m, :time, collect(2015:1:2100))
 
     # Order matters here, if the emissions component defined first, error
     add_comp!(m, grosseconomy)
     add_comp!(m, emissions)
+    add_comp!(m, climate)
+    add_comp!(m, damages)
 
     """
     update_param! used to assign values each component parameter 
     with an external connection to an unshared model param 
     """
     # Update parameters for the grosseconomy component
-    update_param!(m, :grosseconomy, :L, [(1. + 0.015)^t * 6404 for t in 1:20])
-    update_param!(m, :grosseconomy, :TFP, [(1 + 0.065)^t * 3.57 for t in 1:20])
-    update_param!(m, :grosseconomy, :s, ones(20) .* 0.22)
+    update_param!(m, :grosseconomy, :L, [(1. + 0.003)^t * 6.404 for t in 1:86])
+    update_param!(m, :grosseconomy, :TFP, [(1 + 0.01)^t * 3.57 for t in 1:86])
+    update_param!(m, :grosseconomy, :s, ones(86) .* 0.22)
     update_param!(m, :grosseconomy, :δ, 0.1)
     update_param!(m, :grosseconomy, :k0, 130.)
     update_param!(m, :grosseconomy, :β, 0.3)
 
     # update parameters for the emissions component 
-    update_param!(m, :emissions, :σ, [(1. - 0.05)^t * 0.58 for t in 1:20])
+    update_param!(m, :emissions, :ω, [(1. - 0.002)^t * 0.07 for t in 1:86])
+    update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
+
+    # update parameters for the climate component 
+    update_param!(m, :climate, :CO2_AT_0, 3120)
+    update_param!(m, :climate, :CO2_UP_0, 5628.8)
+    update_param!(m, :climate, :CO2_LO_0, 36706.7)
+    update_param!(m, :climate, :F_0, 2.30)
+    update_param!(m, :climate, :FEX_0, 0.28)
+    update_param!(m, :climate, :T_AT_0, 1.0)
+    update_param!(m, :climate, :T_LO_0, 0.0068)
+
+    update_param!(m, :climate, :CO2_AT_PRE, 2156.2)
+    update_param!(m, :climate, :CO2_LO_PRE, 36670.0)
+    update_param!(m, :climate, :CO2_UP_PRE, 4950.5)
+    update_param!(m, :climate, :F2CO2, 3.8)
+    update_param!(m, :climate, :fex, 0.005)
+    update_param!(m, :climate, :ϕ_11, 0.9817)
+    update_param!(m, :climate, :ϕ_12, 0.0183)
+    update_param!(m, :climate, :ϕ_21, 0.0080)
+    update_param!(m, :climate, :ϕ_22, 0.9915)
+    update_param!(m, :climate, :ϕ_23, 0.0005)
+    update_param!(m, :climate, :ϕ_32, 0.0001)
+    update_param!(m, :climate, :ϕ_33, 0.9999)
+    update_param!(m, :climate, :t_1, 0.027)
+    update_param!(m, :climate, :t_2, 0.018)
+    update_param!(m, :climate, :t_3, 0.005)
+    update_param!(m, :climate, :S, 3)
+
+    # update parameters for damages function 
+
+    update_param!(m, :damages, :η₁, 0)
+    update_param!(m, :damages, :η₂, 0.00284)
+    update_param!(m, :damages, :η₃, 0.000005)
 
     # connect parameters for the emissions component 
     connect_param!(m, :emissions, :Y, :grosseconomy, :Y)
 
+    # connect parameters for the climate component 
+    connect_param!(m, :climate, :E, :emissions, :E)
+
+    # connect parameters for the damages component
+    connect_param!(m, :damages, :T_AT, :climate, :T_AT)
+    connect_param!(m, :damages, :Y, :grosseconomy, :Y)
+
     return m
 end
-
 ```
 
 #### Running the Model and Exploring Results
@@ -307,11 +385,32 @@ getdataframe(m, :emissions, :E)
 And we can vizualize the results via plotting and explorer:
 ```julia
 # Plot model results
-Mimi.plot(m, :emissions, :E);
-
-# Observe all model result graphs in UI
-explore(m)
+Mimi.plot(m, :grosseconomy, :Y)
+Mimi.plot(m, :emissions, :E)
+Mimi.plot(m, :climate, :T_AT)
+Mimi.plot(m, :damages, :D)
 ```
+So, what does our simplistic model tell us?
+
+First, the output should continue to grow according to our hypothesis, up to hundreds of trillion USD! 
+
+!["output"](gross_economy.svg)
+
+Second, due to our assumptions on the carbon intensity and energy intensity evolutions, alongside the economic growth, the emissions should grow such as:
 
 !["emissions"](emissions.svg)
 
+Due to these emissions, the atmospheric temperature should increase by 3.5°C by the end of the century.
+
+!["T_AT"](T_AT.svg)
+
+Which could result to up to 6.5% of yearly GDP damages by 2100:
+
+!["damages"](damages.svg)
+
+
+You can also explore interactively all the variables in your model with the following command:
+```julia
+# Observe all model result graphs in UI
+explore(m)
+```
