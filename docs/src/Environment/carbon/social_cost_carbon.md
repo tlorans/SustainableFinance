@@ -1,10 +1,10 @@
 # Social Cost of Carbon
 
-### What is the Social Cost of Carbon?
+## What is the Social Cost of Carbon?
 
 Social cost of carbon (SCC) is an estimate, in USD, of the economic damages that would result from emitting one additional ton of GHGs into the atmosphere. The SCC puts the effects of climate change into economic terms to help policy makers and other decision-makers understand the economic impacts of decisions that would increase or decrease emissions. 
 
-### Integrated Assessment Models 
+## Integrated Assessment Models 
 
 Integrated Assessment Models (IAMs) are economic models, coupled with climate component, used to determine future outcomes from climate change. Based on these models, the SCC is computed in four steps:
 
@@ -22,27 +22,27 @@ To illustrate the process and the `Mimi Framework` we will use, let's illustrate
 
 We describe here a really simple toy world economy, with gross output and capital evolving according to fixed parameters and exogeneous variables.
 
-#### Endogeneous Variables
+### Endogeneous Variables
 
 | Notation      | Description | Equation | 
 | ----------- | ----------- |----------- |
 | $Y_t$  |  Gross output   | $Y_t = TFP_t * K_t^\beta * L_t^{(1-\beta)}$    |
 | $K_t$   | Capital        |  $K_t = (1 - \delta) * K_{t-1} + Y_{t-1} * s_{t-1}$|
 
-#### Parameters
+### Parameters
 | Notation      | Description |  
 | ----------- | ----------- |
 | $\delta$  |  Depreciation rate on capital  | 
 | $\beta$   | Capital share |
 
-#### Exogeneous Variables
+### Exogeneous Variables
 | Notation      | Description |  
 | ----------- | ----------- |
 | $L_t$  |  Labor  | 
 | $TFP_t$   | Total factor productivity |
 | $s_t$   | Savings rate |
 
-#### Julia Implementation
+### Julia Implementation
 
 Let's first implement the economy component:
 ```julia 
@@ -80,21 +80,21 @@ The emissions component is also really simplistic. The energy consumption is mod
 
 Note that the gross output is treated as an exogenous variable here.
 
-#### Endogeneous Variable
+### Endogeneous Variable
 
 | Notation      | Description | Equation | 
 | ----------- | ----------- |----------- |
 | $M_t$  |  Energy necessary for the production of output | $M_t = \epsilon_t * Y_t$    |
 | $E_t$  |  Total greenhouse gas emissions | $E_t = \omega_t * M_t$    |
 
-#### Exogeneous Variables
+### Exogeneous Variables
 | Notation      | Description |  
 | ----------- | ----------- |
 | $\epsilon_t$  | Energy to output ratio (EJ/trillion USD)  |
 | $\omega_t$  | $CO_2$ intensity (Gt/EJ)  | 
 | $Y_t$   | Gross output |
 
-#### Julia Implementation
+### Julia Implementation
 Let's implement it in Julia:
 ```julia
 
@@ -125,7 +125,7 @@ The accumulation of atmospheric $CO_2$ concentration increases radiative forcing
 
 Note that emissions are taken as exogenous in this component. 
 
-#### Endogeneous Variables
+### Endogeneous Variables
 
 | Notation      | Description | Equation | 
 | ----------- | ----------- |----------- |
@@ -138,7 +138,7 @@ Note that emissions are taken as exogenous in this component.
 | $T_{LO_t}$  |  Lower ocean temperature over pre-industrial levels (°C)  | $T_{LO_t} = T_{LO_{t-1}} + t_3(T_{AT_{t-1}} - T_{LO_{t-1}})$ |
 
 
-#### Parameters
+### Parameters
 | Notation      | Description |  
 | ----------- | ----------- |
 | $CO2_{AT-PRE}$  | Pre-industrial $CO_2$ concentration in atmosphere (Gt)  | 
@@ -158,12 +158,12 @@ Note that emissions are taken as exogenous in this component.
 | $t_3$  | Coefficient of heat loss from the atmosphere to the lower ocean (lower ocean temperature equation) | 
 | $S$  | Equilibrium climate sensitivity | 
 
-#### Exogeneous Variables
+### Exogeneous Variables
 | Notation      | Description |  
 | ----------- | ----------- |
 | $E_t$  |  Total greenhouse gas emissions  | 
 
-#### Julia Implementation 
+### Julia Implementation 
 
 We can implement it in Julia:
 ```julia
@@ -239,7 +239,7 @@ end
 
 The Damages Component use the Damage function formulated by Weitzman (2012), with a calibration such as the damages in percentage of gross output is equal to 50% when the increase in atmospheric temperature is at 6°C.
 
-#### Endogeneous Variables
+### Endogeneous Variables
 
 | Notation      | Description | Equation | 
 | ----------- | ----------- |----------- |
@@ -247,7 +247,7 @@ The Damages Component use the Damage function formulated by Weitzman (2012), wit
 | $\Omega_t$  | Damages in USD | $\Omega_t = D_tY_t$ |
 
 
-#### Parameters
+### Parameters
 | Notation      | Description |  
 | ----------- | ----------- |
 | $\eta_1$  | Parameter of damage function | 
@@ -255,7 +255,7 @@ The Damages Component use the Damage function formulated by Weitzman (2012), wit
 | $\eta_3$  | Parameter of damage function | 
 
 
-#### Exogeneous Variables
+### Exogeneous Variables
 | Notation      | Description |  
 | ----------- | ----------- |
 |  $T_{AT_t}$  |  Atmospheric temperature over pre-industrial levels (°C)|
@@ -457,3 +457,13 @@ Which gives the following SCC:
 ```
 445.346870492358
 ```
+
+## Models from the Interagency Working Group
+
+In its establishment of estimates of the social cost of carbon for use across the federal United States government, the Interagency Working Group on the Social Cost of Greenhouse Gases (IWG) utilized three integrated assessment models from the peer-reviewed literature. To improve the transparency and accessibility of the IWG models, Resources for the Future (RFF) has release the `MimiIWG`, using the same `Mimi` package we used for our toy model.
+
+This package allows users to easily access, run and modify all the model versions and specific configurations utilized by the IWG. 
+
+A video tutorial by David Anthoff (UC Berkeley), the creator of the `Mimi` package, is available here:
+
+[![IMAGE ALT TEXT HERE](video.png)](https://youtu.be/C2rqpHk3Rek)

@@ -9,7 +9,8 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Environmentals Pricing" => Any[
-            "Social Cost of Carbon"=>"Environment/social_cost_carbon.md"
+            "Social Cost of Carbon"=>"Environment/carbon/social_cost_carbon.md",
+            "Social Cost of Air Pollution"=>"Environment/pollution/air_pollution.md"
         ]
     ]
 )
