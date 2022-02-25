@@ -49,7 +49,7 @@ end
 function construct_model()
 
     m = Model()
-    set_dimension!(m, :time, collect(2015:1:2020))
+    set_dimension!(m, :time, collect(1:1))
 
     add_comp!(m, exposure)
     add_comp!(m, human_health)
@@ -78,9 +78,14 @@ run(m)
 value_baseline = getdataframe(m, :human_health, :Ω_Mort)
 getdataframe(m, :human_health, :Mort)
 getdataframe(m, :human_health, :VSL)
+
 getdataframe(m, :human_health, :Exceed_PM25)
 
 getdataframe(m, :human_health, :Ω_Mort)[1, :Ω_Mort]/ (14722730.70 * 10^6)
+
+# STEP 4 VISUALIZE
+# plot model results 
+
 
 explore(m)
 
