@@ -1,61 +1,133 @@
-# Julia for Sustainable Finance
+# Julia for ESG Valuation
 
-The objective of this website is to explain how to conduct externalities valuation with Julia. The entire methodology comes from the Value Balancing Alliance. All credits for the methodology goes to the Value Balancing Alliance. The author of this website only added the programming with Julia components.
-
-This page is a summarized version of the General Paper (2021) published by the Value Balancing Alliance.
+The objective of this website is to explain how to conduct externalities valuation with Julia. 
 
 
-The aim of the methodology proposed by the Value Balancing Alliance is:
+## ESG Valuation: Correcting a Market Failure 
 
-- To move forward traditional ESG assessment
+- ESG issues are extra-financial topics reflecting in externalities to society, coming from business activities. 
 
-- Standardize the ESG assessment 
+- These externalities are not priced-in and reflects a market failure (failure to price these externalities in a way that businesses activities can internalize it and change behavior accordingly)
 
-- Assessing positive and negative impacts of corporate activities on the environment and society (measure the value to society)
+- ESG valuation is a way to correct this market failure, associating costs to these externalities, allowing investors to adjust financial decisions based on the ESG-adjusted valuation
 
-!["impact assessment"](Impact_assessment.png)
-Source: Value Balancing Alliance, General Paper 2021
+### Externalities as Market Failure
 
-## Performing Monetary ESG Valuation
+- Economic activity generates residuals / costs to society
 
-- Traditional ESG reporting stops at the quantification of impacts, such as tonnes of GHG emissions emitted or reported safety incidents
+- Some residuals are priced (at least partially) by markets:
+    - some waste for example
 
-- Assigning a monetary value to these impacts allows for understanding the scale of the consequences of these impacts
+- But vast majority of residuals are not priced by markets :
+    - CO2 emissions, air pollution, most waste, water depletion, workers health and safety incidents, etc.
 
-- Monetary valuation also enables direct comparison of different impact areas
+- If these residuals were priced, firms and consumers could internalize the associated costs
 
-- Monetary valuation enables to price externalities of business activities
+- If not priced, these costs to society are hidden or external (we call about externalities):
+    - then allocation of resources within the economic / financial system may be inefficient
+    - then measures of macroeconomic output and companies fundamentals may be inaccurate
 
-- Specific valuation methods will be discussed for each ESG issues covered
+### Correcting Market Failure
 
-!["Monetary valuation"](Monetary_valuation.png)
-Source: Value Balancing Alliance, General Paper 2021
+- Business activities must face cost of externalities
 
-## ESG Scoping 
+- To do so, one need to estimate ESG impacts (the costs to society)
 
-We discuss here briefly the scope of the ESG valuation methodology proposed by the Value Balancing Alliance.
+- One approach used are the Integrated Assessment Models (IAMs) to estimate health effects and monetary damages
 
-### ESG Issues
+- However, ESG valuation can face some pitfalls:
+    - Uncertainty (parameters values, data estimates)
+    - Valuation and ethics (discount rate in the case of expected future damages of climate change for example)
 
-- In this first version of the methodology proposed by the Value Balancing Alliance, three main dimensions are covered as externalities or social values of business:
+## Conceptual Modeling
 
-    - Economic 
+- ESG valuation allows for more accurate financial assessment, taking into account the hidden costs from business activties
 
-    - Environmental 
+- The approach pledges for an ESG integration into traditional accounting methods
 
-    - Human and Social
+### Sustainability as a Benefit-Cost to Society Analysis
 
-- Some areas, such as impacts and pricing of GHG emissions and climate change are well established. Other approaches are much less advanced and subject to ongoing debate.
+- The rationale behing ESG valuation is such that:
+    - activity is sustainable and worth doing if benefits (financial and extra-financial) are higher than costs (including costs to society)
 
-!["ESG Issues"](ESG_Issues.png)
-Source: Value Balancing Alliance, General Paper 2021
 
-### Value Chain of Impacts
 
-- Influence of a company goes far beyond the boundaries over which it exercises financial or operational control 
+## Empirical Methods
 
-- A meaningful assessment of the relationships between companies and nature and companies and society needs to take upstream and downstream effects into account
+- ESG Valuation can be empirically conducted with:
+    - a modeling approach linking impacts drivers (eg. GHG emissions) and outcomes to society (eg. impacts on human health, crop yields, etc.)
+    - a valuation approach to translate various damages in monetary terms
+    - determining a social cost (price) of the ESG issue by determining marginal damages associated with this ESG issue
+    - applying this social cost to the company's externalities
 
-!["value chain"](scope_value_chain.png)
-Source: Value Balancing Alliance, General Paper 2021
+### Integrated Assessment Models
+
+- Integrated Assessment Models (IAMs) are a common tool to connect economic / anthropogenic activities with envrionmental consequences
+
+- IAMs have been applied to various contexts:
+    - Climate change
+    - Air pollution
+    - Water depletion
+
+- IAMs embody a damage function approach: ESG issues assessed with this approach would be translated in damages to human health, materials, etc.
+
+### Valuation 
+
+- The valuation step aims for translating damages in monetary terms 
+
+- It provides a common metric for:
+    - ranking damages caused by differents ESG issues (climate change, air pollution, health & security for workers, etc;)
+    - aggregation across different damages types (deaths, illness, crop yields, material depreciation) and different ESG issues (leading to an overall ESG costs valuation)
+
+### Social Cost
+
+- Once damages and valuation is performed, we can compute the social cost per additional unit of residuals (eg. GHG emissions, air pollutant emitted) produced by the economic activity 
+
+- When using IAMs, social cost is determined through the computation of a marginal model:
+    - model the damages and associated cost with a baseline scenario
+    - repeat the process after including a small amount of additional residuals to determine the impact on the total cost of related damages
+    - the increase in damages from the additional emissions provides an estimated of the SCC.
+
+
+## An Illustrative Example with Julia
+
+Let's run an A to Z ESG valuation in an illustrative example, applied to the field of climate change only.
+
+### Financial and Extrafinancial Statement
+
+At first, let's begin with the extra-financial and financial statement of a company a:
+```julia
+Base.@kwdef mutable struct CompanyResults
+    revenue::Float64 # Revenue in billion USDs
+    ghg_emissions::Float64 # GHG emissions in milions tonnes of CO2eq 
+    climate_costs::Union{Nothing,Float64} = nothing # Climate-related damages to society from the company, in Billion USD
+end
+
+
+company_a = CompanyResults(revenue = 164.2, ghg_emissions =  374)
+```
+
+In a sustainability (climate change is the only issue assessed in this example) point of view, does it worth to invest in this company? This is the question we will try to answer with this illustrative example.
+
+### Climate Valuation
+
+Let's take as given a SCC at 51$/ton of CO2 (value taken by the Biden administration), and let's compute the climate-related costs from this company's emissions:
+
+```julia 
+## GHG emissions valuation 
+using Plots
+
+function climate_valuation!(data::CompanyResults, scc::Float64)::CompanyResults
+    data.climate_costs = - data.ghg_emissions * scc * 10^(-3) # to express in billion USD
+    legend_axis = ["Revenue", "Climate Costs"]
+    display(bar(legend_axis, vcat(data.revenue, data.climate_costs), orientation = :horizontal, bar_width = 1, legend = nothing, xlabel = "Billion USD",
+    colour = ["blue","green"]))
+    return data
+end
+
+climate_valuation!(company_a, 51.)
+```
+
+!["example valuation"](illustrative_example.png)
+
 
