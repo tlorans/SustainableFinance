@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>- · Julia for ESG Valuation</title><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Julia for ESG Valuation</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Julia for IAM</span><ul><li><a class="tocitem" href="../intro/">Integrated Assessment Models</a></li><li><a class="tocitem" href="../economy_component/">Economy Component</a></li><li><a class="tocitem" href="../emissions_component/">Emissions Component</a></li><li><a class="tocitem" href="../climate_component/">Climate Component</a></li><li><a class="tocitem" href="../damages_component/">Damages Component</a></li><li><a class="tocitem" href="../scc/">Social Cost of Carbon</a></li></ul></li><li><span class="tocitem">Climate Valuation</span><ul><li><a class="tocitem" href="../../Climate Valuation/fund_model/">The FUND Model</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>-</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>-</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/tlorans/SustainableFinance/blob/master/docs/src/Julia for IAM/all_together.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Binding-All-Components-Together"><a class="docs-heading-anchor" href="#Binding-All-Components-Together">Binding All Components Together</a><a id="Binding-All-Components-Together-1"></a><a class="docs-heading-anchor-permalink" href="#Binding-All-Components-Together" title="Permalink"></a></h2><p>We can now use <code>Mimi</code>to bind the <code>grosseconomy</code>, the <code>emissions</code>, the <code>climate</code> and the <code>damages</code> components together, in order to solve for the emissions level of the global economy over time and the resulting damages.</p><pre><code class="language-julia hljs"># STEP 2: CONSTRUCT A MODEL BY BINDING BOTH COMPONENTS 
+
+# if anay variables of one component are parameters for another, connect_param! is
+# used to couple the two
+
+function construct_model(;marginal = false)
+    m = Model()
+
+    set_dimension!(m, :time, collect(2015:1:2100))
+
+    # Order matters here, if the emissions component defined first, error
+    add_comp!(m, grosseconomy)
+    add_comp!(m, emissions)
+    add_comp!(m, climate)
+    add_comp!(m, damages)
+
+    &quot;&quot;&quot;
+    update_param! used to assign values each component parameter 
+    with an external connection to an unshared model param 
+    &quot;&quot;&quot;
+    # Update parameters for the grosseconomy component
+    update_param!(m, :grosseconomy, :L, [(1. + 0.003)^t * 6.404 for t in 1:86])
+    update_param!(m, :grosseconomy, :TFP, [(1 + 0.01)^t * 3.57 for t in 1:86])
+    update_param!(m, :grosseconomy, :s, ones(86) .* 0.22)
+    update_param!(m, :grosseconomy, :δ, 0.1)
+    update_param!(m, :grosseconomy, :k0, 130.)
+    update_param!(m, :grosseconomy, :β, 0.3)
+
+    # update parameters for the emissions component 
+    update_param!(m, :emissions, :ω, [(1. - 0.002)^t * 0.07 for t in 1:86])
+    
+    if marginal # we&#39;ll see later the use of this
+        pulse = 1/1e10 # units of emissions are Gt then we convert 1 ton of pulse in Gt 
+        update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * (7.92 + pulse) for t in 1:86])
+    else
+        update_param!(m, :emissions, :ϵ, [(1. - 0.002)^t * 7.92 for t in 1:86])
+    end
+
+    # update parameters for the climate component 
+    update_param!(m, :climate, :CO2_AT_0, 3120)
+    update_param!(m, :climate, :CO2_UP_0, 5628.8)
+    update_param!(m, :climate, :CO2_LO_0, 36706.7)
+    update_param!(m, :climate, :F_0, 2.30)
+    update_param!(m, :climate, :FEX_0, 0.28)
+    update_param!(m, :climate, :T_AT_0, 1.0)
+    update_param!(m, :climate, :T_LO_0, 0.0068)
+
+    update_param!(m, :climate, :CO2_AT_PRE, 2156.2)
+    update_param!(m, :climate, :CO2_LO_PRE, 36670.0)
+    update_param!(m, :climate, :CO2_UP_PRE, 4950.5)
+    update_param!(m, :climate, :F2CO2, 3.8)
+    update_param!(m, :climate, :fex, 0.005)
+    update_param!(m, :climate, :ϕ_11, 0.9817)
+    update_param!(m, :climate, :ϕ_12, 0.0183)
+    update_param!(m, :climate, :ϕ_21, 0.0080)
+    update_param!(m, :climate, :ϕ_22, 0.9915)
+    update_param!(m, :climate, :ϕ_23, 0.0005)
+    update_param!(m, :climate, :ϕ_32, 0.0001)
+    update_param!(m, :climate, :ϕ_33, 0.9999)
+    update_param!(m, :climate, :t_1, 0.027)
+    update_param!(m, :climate, :t_2, 0.018)
+    update_param!(m, :climate, :t_3, 0.005)
+    update_param!(m, :climate, :S, 3)
+
+    # update parameters for damages function 
+
+    update_param!(m, :damages, :η₁, 0)
+    update_param!(m, :damages, :η₂, 0.00284)
+    update_param!(m, :damages, :η₃, 0.000005)
+
+    # connect parameters for the emissions component 
+    connect_param!(m, :emissions, :Y, :grosseconomy, :Y)
+
+    # connect parameters for the climate component 
+    connect_param!(m, :climate, :E, :emissions, :E)
+
+    # connect parameters for the damages component
+    connect_param!(m, :damages, :T_AT, :climate, :T_AT)
+    connect_param!(m, :damages, :Y, :grosseconomy, :Y)
+
+    return m
+end</code></pre><p>Now, we can run the model and examine the results:</p><pre><code class="language-julia hljs">m = construct_model()
+run(m)
+
+# Check model resutls 
+getdataframe(m, :emissions, :E)</code></pre><p>And we can vizualize the results via plotting and explorer:</p><pre><code class="language-julia hljs"># Plot model results
+Mimi.plot(m, :grosseconomy, :Y)
+Mimi.plot(m, :emissions, :E)
+Mimi.plot(m, :climate, :T_AT)
+Mimi.plot(m, :damages, :D)</code></pre><p>So, what does our simplistic model tell us?</p><p>First, the output should continue to grow according to our hypothesis, up to hundreds of trillion USD! </p><p><img src="../gross_economy.svg" alt="&quot;output&quot;"/></p><p>Second, due to our assumptions on the carbon intensity and energy intensity evolutions, alongside the economic growth, the emissions should grow such as:</p><p><img src="../emissions.svg" alt="&quot;emissions&quot;"/></p><p>Due to these emissions, the atmospheric temperature should increase by 3.5°C by the end of the century.</p><p><img src="../T_AT.svg" alt="&quot;T_AT&quot;"/></p><p>Which could result to up to 6.5% of yearly GDP damages by 2100:</p><p><img src="../damages.svg" alt="&quot;damages&quot;"/></p><p>You can also explore interactively all the variables in your model with the following command:</p><pre><code class="language-julia hljs"># Observe all model result graphs in UI
+explore(m)</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.14 on <span class="colophon-date" title="Wednesday 2 March 2022 17:07">Wednesday 2 March 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
