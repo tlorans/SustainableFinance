@@ -3,12 +3,12 @@ using SustainableFinance
 
 push!(LOAD_PATH,"../src/")
 makedocs(
-    sitename = "Julia for ESG Valuation",
+    sitename = "Julia for Sustainable Finance",
     format = Documenter.HTML(),
     modules = [SustainableFinance];
     pages = [
         "Home" => "index.md",
-        "Julia for IAM" => Any[
+        "Integrated Assessment Modeling" => Any[
             "Integrated Assessment Models"=>"Julia for IAM/intro.md",
             "Economy Component"=>"Julia for IAM/economy_component.md",
             "Emissions Component"=>"Julia for IAM/emissions_component.md",
@@ -17,8 +17,13 @@ makedocs(
             "Social Cost of Carbon"=>"Julia for IAM/scc.md",
         ],
         "Climate Valuation" => Any[
-            "The FUND Model"=>"Climate Valuation/fund_model.md",
-        ]
+            "Impacts"=>"Climate Valuation/Impacts/impacts.md",
+            "Social Cost"=>"Climate Valuation/Social Cost/social_costs.md",
+
+        ],
+        "Climate Investing" => Any[
+            "Climate Investing" => "Climate Investing/benchmark_climate.md"
+        ],
     ]
 )
 

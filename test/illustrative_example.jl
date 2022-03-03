@@ -24,4 +24,4 @@ end
 
 climate_valuation!(company_a, 51.)
 
-
+company_a.climate_costs / company_a.revenue * -1
