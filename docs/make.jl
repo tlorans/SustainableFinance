@@ -24,6 +24,11 @@ makedocs(
         "Climate Investing" => Any[
             "Climate Investing" => "Climate Investing/benchmark_climate.md"
         ],
+        "Climate Rating" => Any[
+            "Climate Unsustainability" => "Climate Rating/unsustainability.md",
+            "Climate Uncertainty" => "Climate Rating/climate_uncertainty.md",
+            "Probability of Climate Unsustainability" => "Climate Rating/probability.md",
+        ],
     ]
 )
 
