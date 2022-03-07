@@ -8,26 +8,19 @@ makedocs(
     modules = [SustainableFinance];
     pages = [
         "Home" => "index.md",
-        "Integrated Assessment Modeling" => Any[
-            "Integrated Assessment Models"=>"Julia for IAM/intro.md",
-            "Economy Component"=>"Julia for IAM/economy_component.md",
-            "Emissions Component"=>"Julia for IAM/emissions_component.md",
-            "Climate Component"=>"Julia for IAM/climate_component.md",
-            "Damages Component"=>"Julia for IAM/damages_component.md",
-            "Social Cost of Carbon"=>"Julia for IAM/scc.md",
+        "ESG Valuation" => Any[
+            "Introduction"=>"ESG Valuation/intro.md",
+            "GHG Emissions"=>"ESG Valuation/Environmentals/Climate/impacts.md",
+            "Air Pollution"=>"ESG Valuation/Environmentals/Air Pollution/air_pollution.md",
+            "Water Consumption"=>"ESG Valuation/Environmentals/Water Consumption/malnutrition.md",
         ],
-        "Climate Valuation" => Any[
-            "Impacts"=>"Climate Valuation/Impacts/impacts.md",
-            "Social Cost"=>"Climate Valuation/Social Cost/social_costs.md",
-
+        "ESG Investing" => Any[
+            "Climate Investing" => "ESG Investing/Climate Investing/benchmark_climate.md"
         ],
-        "Climate Investing" => Any[
-            "Climate Investing" => "Climate Investing/benchmark_climate.md"
-        ],
-        "Climate Rating" => Any[
-            "Climate Unsustainability" => "Climate Rating/unsustainability.md",
-            "Climate Uncertainty" => "Climate Rating/climate_uncertainty.md",
-            "Probability of Climate Unsustainability" => "Climate Rating/probability.md",
+        "ESG Performance" => Any[
+            "Climate Unsustainability" => "ESG Performance/Climate Performance/unsustainability.md",
+            "Climate Uncertainty" => "ESG Performance/Climate Performance/climate_uncertainty.md",
+            "Probability of Climate Unsustainability" => "ESG Performance/Climate Performance/probability.md",
         ],
     ]
 )
