@@ -1,4 +1,4 @@
-# Impacts
+# GHG Emissions
 
 To decompose and assess various damages due to climate change, we will use the FUND model.
 
