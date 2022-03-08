@@ -62,8 +62,8 @@ function construct_model()
     update_param!(m, :human_health, :alpha_0, 0.000134) 
     update_param!(m, :human_health, :y, 10500.) 
     update_param!(m, :human_health, :y_OECD, 37000.) 
-    update_param!(m, :human_health, :e, 0.8) 
-    update_param!(m, :human_health, :VSL_OECD, 1. * 10^6) 
+    update_param!(m, :human_health, :e, 0.6) 
+    update_param!(m, :human_health, :VSL_OECD, 3.4 * 10^6) 
 
     connect_param!(m, :human_health, :POP_25, :exposure, :POP_25)
     connect_param!(m, :human_health, :Exceed_PM25, :exposure, :Exceed_PM25)
@@ -87,7 +87,7 @@ getdataframe(m, :human_health, :Ω_Mort)[1, :Ω_Mort]/ (14722730.70 * 10^6)
 # plot model results 
 
 
-explore(m)
+# explore(m)
 
 china_PM25 = 9926.4 * 10^(3)
 

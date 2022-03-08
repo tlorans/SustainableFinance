@@ -136,7 +136,7 @@ function construct_model()
 end
 ```
 
-## Computing Cost of Air Pollution
+## Social Cost of Air Pollution
 
 Let's run the model first:
 ```julia
